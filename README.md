@@ -36,7 +36,7 @@ El sistema permite administrar la contabilidad de un conjunto de inversiones reg
 - `main.py`: Punto de entrada principal de la aplicación.
 
 ## Distribución de Actividades, Ramas y Commits
-- **[Teojz] (Rama `feature/mercado-yfinance`):** Clase `ServicioMercado` con integración de `yfinance`, conversión automática a COP, extracción de EPS y series históricas multitemporales.
-- **[Andrés] (Rama `feature/modelos-base`):** Clases `Activo`, `Transaccion`, `Accion` e `InstrumentoRentaFija` (CDT, Bonos y TES) con control de acciones compradas/vendidas y devengo de intereses.
-- **[Teojz] (Rama `feature/motor-portafolio`):** Clase `Portafolio`, cálculo de Rentabilidad Acumulada, Rentabilidad Efectiva Anual (E.A.), distribución Renta Fija/Variable y persistencia de datos.
-- **[Teojz] & [Andrés] (Rama `feature/dashboard-gui`):** Clase `InterfazPortafolioGUI`, archivo principal `main.py`, portafolio semilla estilo Bancolombia y documentación en Wiki.
+- **[Carlos10marin] (Rama `feature/modelos-activos`):** Implementación de la clase base `Activo` (`src/activo.py`) y la clase `Transaccion` (`src/transaccion.py`) con control de fechas, precios y comisiones de bróker.
+- **[Carlos10marin] (Rama `feature/instrumentos-inversion`):** Implementación de las clases `Accion` (`src/accion.py`) e `InstrumentoRentaFija` (`src/renta_fija.py`) para acciones, dividendos, CDT, Bonos y TES.
+- **[Teojz] (Rama `feature/mercado-y-portafolio`):** Implementación de `ServicioMercado` (`src/servicio_mercado.py`) con `yfinance`, conversión a COP, EPS y series de tiempo, y motor financiero `Portafolio` (`src/portafolio.py`) para cálculo de Rentabilidad Acumulada y Efectiva Anual (E.A.).
+- **[Teojz] (Rama `feature/dashboard-visual`):** Implementación de la interfaz gráfica `InterfazPortafolioGUI` (`src/interfaz_portafolio.py`), archivo principal `main.py`, portafolio semilla estilo Bancolombia y documentación del repositorio.
