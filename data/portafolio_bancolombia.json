@@ -1,0 +1,145 @@
+{
+    "nombre_fondo": "Fondo de Inversión Consolidado - Bancolombia COP",
+    "activos": [
+        {
+            "clase": "Accion",
+            "codigo": "PFBCOLOM.CL",
+            "nombre": "Bancolombia Preferencial",
+            "fecha_apertura": "2025-05-10",
+            "cant_comprada": 120,
+            "cant_vendida": 20,
+            "cant_actual": 100,
+            "costo_promedio_cop": 32500.0,
+            "capital_compras_cop": 3900000.0,
+            "ventas_realizadas_cop": 716000.0,
+            "precio_mercado_cop": 32500.0,
+            "utilidad_por_accion_eps": 0.0,
+            "dividendos_recibidos_cop": 356000.0,
+            "comision_total_cop": 23000.0
+        },
+        {
+            "clase": "Accion",
+            "codigo": "ECOPETROL.CL",
+            "nombre": "Ecopetrol S.A.",
+            "fecha_apertura": "2025-06-15",
+            "cant_comprada": 1500,
+            "cant_vendida": 0,
+            "cant_actual": 1500,
+            "costo_promedio_cop": 2150.0,
+            "capital_compras_cop": 3225000.0,
+            "ventas_realizadas_cop": 0.0,
+            "precio_mercado_cop": 2150.0,
+            "utilidad_por_accion_eps": 0.0,
+            "dividendos_recibidos_cop": 280000.0,
+            "comision_total_cop": 12000.0
+        },
+        {
+            "clase": "Accion",
+            "codigo": "AAPL",
+            "nombre": "Apple Inc. (USD -> COP)",
+            "fecha_apertura": "2025-04-01",
+            "cant_comprada": 5,
+            "cant_vendida": 1,
+            "cant_actual": 4,
+            "costo_promedio_cop": 820000.0,
+            "capital_compras_cop": 4100000.0,
+            "ventas_realizadas_cop": 910000.0,
+            "precio_mercado_cop": 820000.0,
+            "utilidad_por_accion_eps": 0.0,
+            "dividendos_recibidos_cop": 22000.0,
+            "comision_total_cop": 27000.0
+        },
+        {
+            "clase": "InstrumentoRentaFija",
+            "codigo": "CDT-BANC-01",
+            "nombre": "CDT Digital Bancolombia 360 Días",
+            "tipo": "CDT",
+            "tipo_renta": "Renta Fija",
+            "capital_invertido": 5000000.0,
+            "tasa_ea": 0.1125,
+            "fecha_apertura": "2025-05-01",
+            "fecha_vencimiento": "2026-04-26",
+            "comision_cop": 0.0,
+            "valor_nominal": 5000000.0,
+            "tasa_cupon_ea": 0.1125,
+            "frecuencia_cupon": 2,
+            "precio_mercado_por_100": null,
+            "rendimientos_recibidos": 0.0,
+            "abonos_capital": 0.0,
+            "historial_movimientos": []
+        },
+        {
+            "clase": "InstrumentoRentaFija",
+            "codigo": "TES-COL-2028",
+            "nombre": "TES Tasa Fija Nación 2028",
+            "tipo": "TES",
+            "tipo_renta": "Renta Fija",
+            "capital_invertido": 4000000.0,
+            "tasa_ea": 0.104,
+            "fecha_apertura": "2025-03-15",
+            "fecha_vencimiento": "2027-03-15",
+            "comision_cop": 10000.0,
+            "valor_nominal": 4000000.0,
+            "tasa_cupon_ea": 0.104,
+            "frecuencia_cupon": 2,
+            "precio_mercado_por_100": null,
+            "rendimientos_recibidos": 208000.0,
+            "abonos_capital": 0.0,
+            "historial_movimientos": [
+                {
+                    "tipo": "RENDIMIENTO",
+                    "concepto": "Cupón semestral recibido",
+                    "fecha": "2025-09-15",
+                    "valor_cop": 208000.0
+                }
+            ]
+        }
+    ],
+    "transacciones": [
+        {
+            "fecha": "2025-05-10",
+            "tipo_operacion": "COMPRA",
+            "codigo_activo": "PFBCOLOM.CL",
+            "cantidad": 120.0,
+            "precio_unitario_cop": 32500.0,
+            "comision_broker_cop": 15000.0,
+            "total_neto_cop": 3915000.0
+        },
+        {
+            "fecha": "2025-08-20",
+            "tipo_operacion": "VENTA",
+            "codigo_activo": "PFBCOLOM.CL",
+            "cantidad": 20.0,
+            "precio_unitario_cop": 35800.0,
+            "comision_broker_cop": 8000.0,
+            "total_neto_cop": 708000.0
+        },
+        {
+            "fecha": "2025-10-01",
+            "tipo_operacion": "DIVIDENDO",
+            "codigo_activo": "PFBCOLOM.CL",
+            "cantidad": 1.0,
+            "precio_unitario_cop": 356000.0,
+            "comision_broker_cop": 0.0,
+            "total_neto_cop": 356000.0
+        },
+        {
+            "fecha": "2025-05-01",
+            "tipo_operacion": "COMPRA",
+            "codigo_activo": "CDT-BANC-01",
+            "cantidad": 1.0,
+            "precio_unitario_cop": 5000000.0,
+            "comision_broker_cop": 0.0,
+            "total_neto_cop": 5000000.0
+        },
+        {
+            "fecha": "2025-03-15",
+            "tipo_operacion": "COMPRA",
+            "codigo_activo": "TES-COL-2028",
+            "cantidad": 1.0,
+            "precio_unitario_cop": 4000000.0,
+            "comision_broker_cop": 10000.0,
+            "total_neto_cop": 4010000.0
+        }
+    ]
+}
