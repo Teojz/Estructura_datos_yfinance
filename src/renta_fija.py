@@ -552,6 +552,96 @@ class InstrumentoRentaFija(Activo):
     # INFORMACIÓN PARA EL DASHBOARD
     # --------------------------------------------------
 
+
+    # --------------------------------------------------
+    # COMPATIBILIDAD CON PORTAFOLIO Y SERIALIZACIÓN JSON
+    # --------------------------------------------------
+
+    def calcularInteresCausadoCOP(self, fecha_corte=None):
+        """Alias compatible con Portafolio para consultar intereses generados."""
+        return self.calcularInteresesGenerados(fecha_corte)
+
+    @property
+    def rendimientos_pagados_cop(self):
+        """Alias del atributo rendimientos_recibidos."""
+        return self.rendimientos_recibidos
+
+    @rendimientos_pagados_cop.setter
+    def rendimientos_pagados_cop(self, valor):
+        self.rendimientos_recibidos = self._validar_numero(
+            valor, "Rendimientos pagados"
+        )
+
+    def toDict(self):
+        """Convierte el instrumento en un diccionario serializable a JSON."""
+        return {
+            "clase": "InstrumentoRentaFija",
+            "codigo": self.codigo,
+            "nombre": self.nombre,
+            "tipo": self.tipo,
+            "tipo_renta": self.tipo_renta,
+            "capital_invertido": self.capital_invertido,
+            "tasa_ea": self.tasa_ea,
+            "fecha_apertura": self._convertir_fecha(
+                self.fecha_apertura
+            ).isoformat(),
+            "fecha_vencimiento": self._convertir_fecha(
+                self.fecha_vencimiento
+            ).isoformat(),
+            "comision_cop": self.comision_total_cop,
+            "valor_nominal": self.valor_nominal,
+            "tasa_cupon_ea": self.tasa_cupon_ea,
+            "frecuencia_cupon": self.frecuencia_cupon,
+            "precio_mercado_por_100": self.precio_mercado_por_100,
+            "rendimientos_recibidos": self.rendimientos_recibidos,
+            "abonos_capital": self.abonos_capital,
+            "historial_movimientos": [
+                movimiento.copy()
+                for movimiento in self.historial_movimientos
+            ]
+        }
+
+    @classmethod
+    def fromDict(cls, datos):
+        """Reconstruye un instrumento de renta fija desde un diccionario."""
+        instrumento = cls(
+            codigo=datos["codigo"],
+            nombre=datos["nombre"],
+            tipo=datos["tipo"],
+            capital_invertido=datos["capital_invertido"],
+            tasa_ea=datos["tasa_ea"],
+            fecha_apertura=datos["fecha_apertura"],
+            fecha_vencimiento=datos["fecha_vencimiento"],
+            comision_cop=datos.get(
+                "comision_cop",
+                datos.get("comision_total_cop", 0.0)
+            ),
+            valor_nominal=datos.get("valor_nominal"),
+            tasa_cupon_ea=datos.get("tasa_cupon_ea"),
+            frecuencia_cupon=datos.get("frecuencia_cupon", 2),
+            precio_mercado_por_100=datos.get(
+                "precio_mercado_por_100"
+            )
+        )
+
+        instrumento.rendimientos_recibidos = cls._validar_numero(
+            datos.get(
+                "rendimientos_recibidos",
+                datos.get("rendimientos_pagados_cop", 0.0)
+            ),
+            "Rendimientos recibidos"
+        )
+        instrumento.abonos_capital = cls._validar_numero(
+            datos.get("abonos_capital", 0.0),
+            "Abonos de capital"
+        )
+        instrumento.historial_movimientos = [
+            movimiento.copy()
+            for movimiento in datos.get("historial_movimientos", [])
+        ]
+
+        return instrumento
+
     def obtenerInformacion(self):
 
         return {
@@ -644,4 +734,3 @@ class InstrumentoRentaFija(Activo):
             f"Valor actual: "
             f"${self.calcularValorActualCOP():,.2f} COP"
         )
-
