@@ -1,5 +1,6 @@
 import yfinance as yf  # Libreria para consultar precios e indicadores en Yahoo Finance
 import pandas as pd    # Libreria para manejar tablas y series de tiempo
+from datetime import datetime, timedelta
 
 
 class ServicioMercado:
@@ -18,7 +19,9 @@ class ServicioMercado:
             "CIB":         {"precio_cop": 152720.0, "eps_cop": 25522.0, "moneda": "USD", "nombre": "Bancolombia ADR (NYSE)"},
             "ECOPETROL.CL":{"precio_cop": 1950.0,   "eps_cop": 385.0,   "moneda": "COP", "nombre": "Ecopetrol S.A."},
             "AAPL":        {"precio_cop": 935000.0, "eps_cop": 26800.0, "moneda": "USD", "nombre": "Apple Inc."},
-            "NVDA":        {"precio_cop": 560000.0, "eps_cop": 12200.0, "moneda": "USD", "nombre": "NVIDIA Corp."}
+            "NVDA":        {"precio_cop": 560000.0, "eps_cop": 12200.0, "moneda": "USD", "nombre": "NVIDIA Corp."},
+            "NKE":         {"precio_cop": 290500.0, "eps_cop": 6640.0,  "moneda": "USD", "nombre": "Nike Inc."},
+            "KO":          {"precio_cop": 290500.0, "eps_cop": 12450.0, "moneda": "USD", "nombre": "The Coca-Cola Company"}
         }
 
     def obtenerTRM(self) -> float:
@@ -32,6 +35,70 @@ class ServicioMercado:
         except Exception:                                         # Si no hay conexion a internet
             pass                                                  # Continua usando la TRM de respaldo
         return self.trm_respaldo                                  # Retorna 4150.0 COP por defecto
+
+    def obtenerTRMFechaExacta(self, fecha: str) -> float:
+        """
+        TRM (USDCOP=X) de la fecha exacta (YYYY-MM-DD). Si ese día no cotiza
+        (fin de semana/festivo), toma el último cierre válido de los 5 días previos.
+        Si falla la conexión o la fecha no es válida, retorna self.trm_actual_cop.
+        """
+        cache = self.__dict__.setdefault("_cache_trm_fecha", {})
+
+        try:
+            fecha_dt = datetime.strptime(str(fecha).strip(), "%Y-%m-%d")
+        except ValueError:
+            return float(self.trm_actual_cop)
+
+        clave = fecha_dt.strftime("%Y-%m-%d")
+        if clave in cache:
+            return cache[clave]
+        if fecha_dt.date() > datetime.now().date():
+            return float(self.trm_actual_cop)
+
+        def _cierres(df):
+            """Normaliza el índice (sin zona horaria) y elimina cierres nulos."""
+            if df is None or df.empty:
+                return None
+            idx = df.index
+            if getattr(idx, "tz", None) is not None:
+                df = df.copy()
+                df.index = idx.tz_localize(None)
+            df = df.dropna(subset=["Close"])
+            return None if df.empty else df
+
+        try:
+            ticker = yf.Ticker("USDCOP=X")
+            valor = None
+
+            # 1. Fecha exacta (end es exclusivo en yfinance)
+            df = _cierres(ticker.history(
+                start=clave,
+                end=(fecha_dt + timedelta(days=1)).strftime("%Y-%m-%d"),
+                interval="1d"
+            ))
+            if df is not None:
+                df = df[df.index.normalize() == pd.Timestamp(fecha_dt)]
+                if not df.empty:
+                    valor = float(df["Close"].iloc[-1])
+
+            # 2. Respaldo: 5 días anteriores -> último cierre válido
+            if valor is None:
+                df = _cierres(ticker.history(
+                    start=(fecha_dt - timedelta(days=5)).strftime("%Y-%m-%d"),
+                    end=clave,
+                    interval="1d"
+                ))
+                if df is not None:
+                    valor = float(df["Close"].iloc[-1])
+
+            if valor is not None and valor > 0:
+                valor = round(valor, 2)
+                cache[clave] = valor
+                return valor
+        except Exception:
+            pass
+
+        return float(self.trm_actual_cop)
 
     def consultarCotizacionYEPS(self, ticker: str) -> dict:
         """
@@ -131,3 +198,107 @@ class ServicioMercado:
         base_cop = self.datos_respaldo.get(codigo, {}).get("precio_cop", 36800.0)
         precios = [round(base_cop * (1 + 0.003 * ((i % 7) - 3)), 2) for i in range(30)]
         return pd.DataFrame({"Precio_COP": precios}, index=fechas)
+
+    # ------------------------------------------------------------------
+    # CONSULTA POR FECHA EXACTA
+    # ------------------------------------------------------------------
+
+    def _trmEnFecha(self, fecha_dt: datetime) -> float:
+        """TRM (USDCOP=X) de la fecha indicada o de la ultima sesion previa (hasta 7 dias atras).
+        Si no hay datos, retorna la TRM actual."""
+        try:
+            df = yf.Ticker("USDCOP=X").history(
+                start=(fecha_dt - timedelta(days=7)).strftime("%Y-%m-%d"),
+                end=(fecha_dt + timedelta(days=1)).strftime("%Y-%m-%d"),
+                interval="1d"
+            )
+            if df is not None and not df.empty:
+                idx = df.index
+                if getattr(idx, "tz", None) is not None:
+                    idx = idx.tz_localize(None)
+                df = df[idx.normalize() <= pd.Timestamp(fecha_dt)]
+                if not df.empty:
+                    return float(df["Close"].iloc[-1])
+        except Exception:
+            pass
+        return float(self.trm_actual_cop)
+
+    def obtenerPrecioFechaExacta(self, ticker: str, fecha_exacta: str) -> dict:
+        """
+        Consulta el precio de cierre en COP de UN dia exacto (YYYY-MM-DD).
+        Retorna: {ok, ticker, fecha, precio_cop, moneda_origen, trm_aplicada, tipo_dia, mensaje}
+        tipo_dia: 'BURSATIL' | 'FIN_DE_SEMANA' | 'SIN_COTIZACION' | 'FUTURA' | 'FECHA_INVALIDA' | 'ERROR'
+        """
+        codigo = ticker.strip().upper()
+        base = {
+            "ok": False, "ticker": codigo, "fecha": str(fecha_exacta).strip(),
+            "precio_cop": 0.0, "moneda_origen": "", "trm_aplicada": 1.0,
+            "tipo_dia": "", "mensaje": ""
+        }
+
+        # 1. Validacion estricta del formato YYYY-MM-DD
+        try:
+            fecha_dt = datetime.strptime(base["fecha"], "%Y-%m-%d")
+        except ValueError:
+            base["tipo_dia"] = "FECHA_INVALIDA"
+            base["mensaje"] = "Fecha invalida. Use el formato YYYY-MM-DD (ejemplo: 2025-08-20)."
+            return base
+
+        if not codigo:
+            base["tipo_dia"] = "ERROR"
+            base["mensaje"] = "Debe indicar un ticker."
+            return base
+
+        # 2. Fechas futuras
+        if fecha_dt.date() > datetime.now().date():
+            base["tipo_dia"] = "FUTURA"
+            base["mensaje"] = f"{base['fecha']} es una fecha futura: aun no existe cotizacion."
+            return base
+
+        # 3. Descarga unicamente ese dia (end es exclusivo en yfinance)
+        try:
+            df = yf.Ticker(codigo).history(
+                start=fecha_dt.strftime("%Y-%m-%d"),
+                end=(fecha_dt + timedelta(days=1)).strftime("%Y-%m-%d"),
+                interval="1d",
+                auto_adjust=False
+            )
+        except Exception as exc:
+            base["tipo_dia"] = "ERROR"
+            base["mensaje"] = f"No fue posible consultar Yahoo Finance (verifique su conexion): {exc}"
+            return base
+
+        # 4. Filtro por fecha exacta, normalizando la zona horaria del indice
+        if df is not None and not df.empty:
+            idx = df.index
+            if getattr(idx, "tz", None) is not None:
+                idx = idx.tz_localize(None)
+            df = df[idx.normalize() == pd.Timestamp(fecha_dt)]
+
+        if df is None or df.empty or pd.isna(df["Close"].iloc[-1]):
+            base["tipo_dia"] = "FIN_DE_SEMANA" if fecha_dt.weekday() >= 5 else "SIN_COTIZACION"
+            if base["tipo_dia"] == "FIN_DE_SEMANA":
+                dia = "sabado" if fecha_dt.weekday() == 5 else "domingo"
+                base["mensaje"] = (f"{base['fecha']} fue {dia}: el mercado no opera. "
+                                   f"Pruebe con un dia habil.")
+            else:
+                base["mensaje"] = (f"No hay cotizacion de {codigo} el {base['fecha']}: posible festivo "
+                                   f"bursatil, dia sin negociacion, fecha anterior a su listado o sin conexion.")
+            return base
+
+        # 5. Conversion a COP
+        precio_origen = float(df["Close"].iloc[-1])
+        if codigo.endswith(".CL"):
+            moneda, factor = "COP", 1.0
+        else:
+            moneda, factor = "USD", self._trmEnFecha(fecha_dt)
+
+        base.update({
+            "ok": True,
+            "precio_cop": round(precio_origen * factor, 2),
+            "moneda_origen": moneda,
+            "trm_aplicada": round(factor, 2),
+            "tipo_dia": "BURSATIL",
+            "mensaje": f"Cierre de {codigo} el {base['fecha']} (TRM {round(factor, 2)} aplicada)."
+        })
+        return base

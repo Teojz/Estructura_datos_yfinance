@@ -12,10 +12,10 @@
             "costo_promedio_cop": 32500.0,
             "capital_compras_cop": 3900000.0,
             "ventas_realizadas_cop": 716000.0,
-            "precio_mercado_cop": 32500.0,
-            "utilidad_por_accion_eps": 0.0,
+            "precio_mercado_cop": 36800.0,
+            "utilidad_por_accion_eps": 6120.0,
             "dividendos_recibidos_cop": 356000.0,
-            "comision_total_cop": 23000.0
+            "comision_total_cop": 9232.0
         },
         {
             "clase": "Accion",
@@ -28,10 +28,10 @@
             "costo_promedio_cop": 2150.0,
             "capital_compras_cop": 3225000.0,
             "ventas_realizadas_cop": 0.0,
-            "precio_mercado_cop": 2150.0,
-            "utilidad_por_accion_eps": 0.0,
+            "precio_mercado_cop": 2465.0,
+            "utilidad_por_accion_eps": 406.06,
             "dividendos_recibidos_cop": 280000.0,
-            "comision_total_cop": 12000.0
+            "comision_total_cop": 6450.0
         },
         {
             "clase": "Accion",
@@ -44,28 +44,36 @@
             "costo_promedio_cop": 820000.0,
             "capital_compras_cop": 4100000.0,
             "ventas_realizadas_cop": 910000.0,
-            "precio_mercado_cop": 820000.0,
-            "utilidad_por_accion_eps": 0.0,
+            "precio_mercado_cop": 1162802.15,
+            "utilidad_por_accion_eps": 29672.25,
             "dividendos_recibidos_cop": 22000.0,
-            "comision_total_cop": 27000.0
+            "comision_total_cop": 10020.0
         },
         {
             "clase": "InstrumentoRentaFija",
             "codigo": "CDT-BANC-01",
-            "nombre": "CDT Digital Bancolombia 360 Días",
+            "nombre": "CDT Digital Bancolombia 360 Dias",
             "tipo": "CDT",
+            "subtipo": "CDT",
             "tipo_renta": "Renta Fija",
             "capital_invertido": 5000000.0,
+            "valor_invertido_cop": 5000000.0,
             "tasa_ea": 0.1125,
+            "tasa_efectiva_anual": 0.1125,
+            "plazo_dias": 360,
             "fecha_apertura": "2025-05-01",
             "fecha_vencimiento": "2026-04-26",
             "comision_cop": 0.0,
+            "comision_total_cop": 0.0,
             "valor_nominal": 5000000.0,
             "tasa_cupon_ea": 0.1125,
             "frecuencia_cupon": 2,
             "precio_mercado_por_100": null,
             "rendimientos_recibidos": 0.0,
+            "rendimientos_pagados_cop": 0.0,
             "abonos_capital": 0.0,
+            "liquidaciones_capital": 0.0,
+            "ventas_realizadas_cop": 0.0,
             "historial_movimientos": []
         },
         {
@@ -73,26 +81,66 @@
             "codigo": "TES-COL-2028",
             "nombre": "TES Tasa Fija Nación 2028",
             "tipo": "TES",
+            "subtipo": "TES",
             "tipo_renta": "Renta Fija",
             "capital_invertido": 4000000.0,
+            "valor_invertido_cop": 4000000.0,
             "tasa_ea": 0.104,
+            "tasa_efectiva_anual": 0.104,
+            "plazo_dias": 730,
             "fecha_apertura": "2025-03-15",
             "fecha_vencimiento": "2027-03-15",
             "comision_cop": 10000.0,
+            "comision_total_cop": 10000.0,
             "valor_nominal": 4000000.0,
             "tasa_cupon_ea": 0.104,
             "frecuencia_cupon": 2,
             "precio_mercado_por_100": null,
             "rendimientos_recibidos": 208000.0,
+            "rendimientos_pagados_cop": 208000.0,
             "abonos_capital": 0.0,
+            "liquidaciones_capital": 0.0,
+            "ventas_realizadas_cop": 0.0,
             "historial_movimientos": [
                 {
                     "tipo": "RENDIMIENTO",
-                    "concepto": "Cupón semestral recibido",
+                    "concepto": "Pago de Rendimiento",
                     "fecha": "2025-09-15",
                     "valor_cop": 208000.0
                 }
             ]
+        },
+        {
+            "clase": "Accion",
+            "codigo": "NKE",
+            "nombre": "Nike Inc. (USD -> COP)",
+            "fecha_apertura": "2025-07-01",
+            "cant_comprada": 20,
+            "cant_vendida": 0,
+            "cant_actual": 20,
+            "costo_promedio_cop": 199228.86,
+            "capital_compras_cop": 3984577.2,
+            "ventas_realizadas_cop": 0.0,
+            "precio_mercado_cop": 118457.72,
+            "utilidad_por_accion_eps": 6872.86,
+            "dividendos_recibidos_cop": 18000.0,
+            "comision_total_cop": 8087.610000000001
+        },
+        {
+            "clase": "Accion",
+            "codigo": "KO",
+            "nombre": "The Coca-Cola Company (USD -> COP)",
+            "fecha_apertura": "2025-07-10",
+            "cant_comprada": 15,
+            "cant_vendida": 0,
+            "cant_actual": 15,
+            "costo_promedio_cop": 270000.0,
+            "capital_compras_cop": 4050000.0,
+            "ventas_realizadas_cop": 0.0,
+            "precio_mercado_cop": 326427.85,
+            "utilidad_por_accion_eps": 11201.44,
+            "dividendos_recibidos_cop": 25000.0,
+            "comision_total_cop": 8100.0
         }
     ],
     "transacciones": [
@@ -102,8 +150,10 @@
             "codigo_activo": "PFBCOLOM.CL",
             "cantidad": 120.0,
             "precio_unitario_cop": 32500.0,
-            "comision_broker_cop": 15000.0,
-            "total_neto_cop": 3915000.0
+            "comision_broker_cop": 7800.0,
+            "trm": 1.0,
+            "dividendo_unitario_cop": 0.0,
+            "total_neto_cop": 3907800.0
         },
         {
             "fecha": "2025-08-20",
@@ -111,8 +161,10 @@
             "codigo_activo": "PFBCOLOM.CL",
             "cantidad": 20.0,
             "precio_unitario_cop": 35800.0,
-            "comision_broker_cop": 8000.0,
-            "total_neto_cop": 708000.0
+            "comision_broker_cop": 1432.0,
+            "trm": 1.0,
+            "dividendo_unitario_cop": 0.0,
+            "total_neto_cop": 714568.0
         },
         {
             "fecha": "2025-10-01",
@@ -121,6 +173,8 @@
             "cantidad": 1.0,
             "precio_unitario_cop": 356000.0,
             "comision_broker_cop": 0.0,
+            "trm": 1.0,
+            "dividendo_unitario_cop": 0.0,
             "total_neto_cop": 356000.0
         },
         {
@@ -130,6 +184,8 @@
             "cantidad": 1.0,
             "precio_unitario_cop": 5000000.0,
             "comision_broker_cop": 0.0,
+            "trm": 1.0,
+            "dividendo_unitario_cop": 0.0,
             "total_neto_cop": 5000000.0
         },
         {
@@ -139,7 +195,42 @@
             "cantidad": 1.0,
             "precio_unitario_cop": 4000000.0,
             "comision_broker_cop": 10000.0,
+            "trm": 1.0,
+            "dividendo_unitario_cop": 0.0,
             "total_neto_cop": 4010000.0
+        },
+        {
+            "fecha": "2025-07-01",
+            "tipo_operacion": "COMPRA",
+            "codigo_activo": "NKE",
+            "cantidad": 10.0,
+            "precio_unitario_cop": 280000.0,
+            "comision_broker_cop": 5600.0,
+            "trm": 4087.75,
+            "dividendo_unitario_cop": 0.0,
+            "total_neto_cop": 2805600.0
+        },
+        {
+            "fecha": "2025-07-10",
+            "tipo_operacion": "COMPRA",
+            "codigo_activo": "KO",
+            "cantidad": 15.0,
+            "precio_unitario_cop": 270000.0,
+            "comision_broker_cop": 8100.0,
+            "trm": 4021.5,
+            "dividendo_unitario_cop": 0.0,
+            "total_neto_cop": 4058100.0
+        },
+        {
+            "fecha": "2024-11-17",
+            "tipo_operacion": "COMPRA",
+            "codigo_activo": "NKE",
+            "cantidad": 10.0,
+            "precio_unitario_cop": 118457.72,
+            "comision_broker_cop": 2487.61,
+            "trm": 4480.0,
+            "dividendo_unitario_cop": 0.0,
+            "total_neto_cop": 1187064.81
         }
     ]
 }
