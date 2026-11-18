@@ -1696,7 +1696,8 @@ class InterfazPortafolioGUI:
         """
         Historial de operaciones con el formato y las fórmulas del Excel 'Prueba portafolio.xlsx':
         Fecha | Acciones | Valor US | Valor COP | Compra | Venta | TRM | Dividendo |
-        Dividendo cop | Pago | Comision | Saldo | Variacion | Total  (+ Activo/Operación en vista TODOS).
+        Dividendo cop | Pago | Comision | Saldo | Variacion | mov  (+ Activo/Operación en vista TODOS).
+        mov = (Valor COP * Compra) + (Valor COP * Venta)
         """
         ventana = tk.Toplevel(self.root)
         ventana.title("Historial de Operaciones del Portafolio")
@@ -1748,7 +1749,7 @@ class InterfazPortafolioGUI:
 
         columnas = ("fecha", "activo", "operacion", "acciones", "valor_us", "valor_cop",
                     "compra", "venta", "trm", "dividendo_us", "dividendo_cop", "pago",
-                    "comision", "saldo", "variacion", "total")
+                    "comision", "saldo", "variacion", "mov")
         columnas_excel = tuple(c for c in columnas if c not in ("activo", "operacion"))
         tabla = ttk.Treeview(marco_tabla, columns=columnas, show="headings")
 
@@ -1757,13 +1758,13 @@ class InterfazPortafolioGUI:
             "acciones": "Acciones", "valor_us": "Valor US",
             "valor_cop": "Valor COP", "compra": "Compra", "venta": "Venta", "trm": "TRM",
             "dividendo_us": "% Dividendo", "dividendo_cop": "Dividendo cop", "pago": "Pago",
-            "comision": "Comision", "saldo": "Saldo", "variacion": "Variacion", "total": "Total"
+            "comision": "Comision", "saldo": "Saldo", "variacion": "Variacion", "mov": "mov"
         }
         anchos = {
             "fecha": 88, "activo": 100, "operacion": 90, "acciones": 70,
             "valor_us": 80, "valor_cop": 95, "compra": 62, "venta": 58, "trm": 80,
             "dividendo_us": 75, "dividendo_cop": 95, "pago": 90, "comision": 80,
-            "saldo": 115, "variacion": 100, "total": 115
+            "saldo": 115, "variacion": 100, "mov": 115
         }
         for c in columnas:
             tabla.heading(c, text=encabezados[c])
@@ -1813,10 +1814,13 @@ class InterfazPortafolioGUI:
             tabla.configure(displaycolumns=columnas if filtro == "TODOS" else columnas_excel)
             filas = self.portafolio.obtenerLibroTransaccionesDetallado(filtro)
 
-            total_comisiones = total_pagos = 0.0
+            total_comisiones = total_pagos = total_mov = 0.0
             for f in filas:
                 total_comisiones += f["comision"]
                 total_pagos += f["pago"]
+                # mov = (Valor COP * Compra) + (Valor COP * Venta), igual que la columna 'mov' del Excel
+                mov = (f["valor_cop"] * f["compra"]) + (f["valor_cop"] * f["venta"])
+                total_mov += mov
                 es_usd = f["moneda"] == "USD"
                 tabla.insert("", "end", tags=("saldo_neg" if f["saldo"] < 0 else "saldo_pos",), values=(
                     f["fecha"],
@@ -1834,7 +1838,7 @@ class InterfazPortafolioGUI:
                     self.formatoCOP(f["comision"]),
                     self.formatoCOP(f["saldo"]),
                     self.formatoCOP(f["variacion"]),
-                    self.formatoCOP(f["total"])
+                    self.formatoCOP(mov)
                 ))
 
             saldo_final = filas[-1]["saldo"] if filas else self.portafolio.capital_inicial_cop
@@ -1848,7 +1852,7 @@ class InterfazPortafolioGUI:
             if filtro != "TODOS" and filas and not isinstance(filas[-1]["acciones_despues"], str):
                 texto += f"  |  Acciones vigentes: {cantidad_txt(filas[-1]['acciones_despues'])}"
             if filas:
-                texto += f"  |  Total: {self.formatoCOP(filas[-1]['total'])}"
+                texto += f"  |  Mov. total: {self.formatoCOP(total_mov)}"
             var_pie.set(texto)
 
         combo_filtro.bind("<<ComboboxSelected>>", cargar_tabla)
