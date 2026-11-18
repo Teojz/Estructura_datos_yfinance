@@ -1,17 +1,16 @@
-
 """
 PROYECTO: Sistema de Seguimiento y Valoración de Portafolio
 MÓDULO: interfaz_portafolio.py
 
-Interfaz gráfica desarrollada con Tkinter y Matplotlib.
-Visualiza inversiones de renta fija y renta variable
-en pesos colombianos (COP).
+Interfaz gráfica profesional desarrollada con Tkinter y Matplotlib.
+Visualiza inversiones de renta fija y renta variable en pesos colombianos (COP).
+Totalmente alineada con el Diagrama de Clases UML del proyecto.
 """
 
 import threading
 import tkinter as tk
 from tkinter import ttk, messagebox
-
+from datetime import datetime
 import pandas as pd
 
 from matplotlib.figure import Figure
@@ -23,7 +22,7 @@ from src.renta_fija import InstrumentoRentaFija
 
 
 class InterfazPortafolioGUI:
-    """Dashboard principal del sistema de seguimiento y valoración."""
+    """Dashboard principal del sistema de seguimiento y valoración (POO & UML)."""
 
     FONDO = "#101820"
     PANEL = "#192832"
@@ -62,11 +61,53 @@ class InterfazPortafolioGUI:
 
         self.actualizacion_en_curso = False
 
+        self.var_fecha_exacta = None
+        self.var_sim = None
+        self.entry_fecha = None
+        self.btn_consultar_fecha = None
+        self.lbl_sim = None
+        self.simulacion = None
+        self.consulta_fecha_en_curso = False
+
+
+    # --------------------------------------------------
+    # PROPIEDADES UML
+    # --------------------------------------------------
+
+    @property
+    def filtro_actual(self) -> str:
+        return self.var_filtro.get() if self.var_filtro else "1A"
+
+    @filtro_actual.setter
+    def filtro_actual(self, valor: str):
+        if self.var_filtro:
+            self.var_filtro.set(valor)
+
+    @property
+    def ticker_seleccionado(self) -> str:
+        return self.var_accion.get() if self.var_accion else ""
+
+    @ticker_seleccionado.setter
+    def ticker_seleccionado(self, valor: str):
+        if self.var_accion:
+            self.var_accion.set(valor)
+
+    @property
+    def labels_tarjetas(self) -> dict:
+        return self.tarjetas
+
+    # --------------------------------------------------
     # FORMATO DE VALORES
+    # --------------------------------------------------
 
     @staticmethod
     def formatearCOP(valor):
         return "$" + f"{float(valor):,.0f}".replace(",", ".")
+
+    @staticmethod
+    def formatoCOP(valor):
+        """Método oficial según el Diagrama de Clases UML."""
+        return InterfazPortafolioGUI.formatearCOP(valor)
 
     @staticmethod
     def formatearPorcentaje(valor):
@@ -78,96 +119,22 @@ class InterfazPortafolioGUI:
             + "%"
         )
 
+    # --------------------------------------------------
     # CÁLCULO DE INDICADORES
+    # --------------------------------------------------
 
     def obtenerResumen(self):
-        capital_total = 0.0
-        valor_total = 0.0
-        comisiones_totales = 0.0
-        dias_ponderados = 0.0
+        """Obtiene el resumen consolidado directamente desde la clase Portafolio."""
+        return self.portafolio.obtenerResumenConsolidadoCOP()
 
-        valor_renta_variable = 0.0
-        valor_renta_fija = 0.0
-
-        dividendos = 0.0
-        rendimientos = 0.0
-
-        for activo in self.portafolio.activos:
-            capital = activo.calcularCapitalInvertidoCOP()
-            valor = activo.calcularValorActualCOP()
-            comision = activo.comision_total_cop
-            dias = activo.calcularDiasTenencia()
-
-            capital_total += capital
-            valor_total += valor
-            comisiones_totales += comision
-            dias_ponderados += capital * dias
-
-            if isinstance(activo, Accion):
-                valor_renta_variable += valor
-                dividendos += activo.dividendos_recibidos_cop
-
-            elif isinstance(activo, InstrumentoRentaFija):
-                valor_renta_fija += valor
-                rendimientos += activo.rendimientos_recibidos
-
-        ganancia = valor_total - capital_total
-
-        rentabilidad = (
-            ganancia / capital_total * 100
-            if capital_total > 0 else 0.0
-        )
-
-        # Rentabilidad E.A. estimada mediante días de tenencia ponderados.
-        dias_promedio = (
-            max(dias_ponderados / capital_total, 1.0)
-            if capital_total > 0 else 1.0
-        )
-
-        if capital_total > 0 and valor_total > 0:
-            exponente = min(365.0 / dias_promedio, 12.0)
-            rentabilidad_ea = (
-                (valor_total / capital_total) ** exponente - 1
-            ) * 100
-        else:
-            rentabilidad_ea = 0.0
-
-        total_distribucion = valor_renta_variable + valor_renta_fija
-
-        porcentaje_rv = (
-            valor_renta_variable / total_distribucion * 100
-            if total_distribucion > 0 else 0.0
-        )
-
-        porcentaje_rf = (
-            valor_renta_fija / total_distribucion * 100
-            if total_distribucion > 0 else 0.0
-        )
-
-        return {
-            "capital_invertido": capital_total,
-            "valor_actual": valor_total,
-            "comisiones": comisiones_totales,
-            "ganancia": ganancia,
-            "rentabilidad": rentabilidad,
-            "rentabilidad_ea": rentabilidad_ea,
-            "renta_variable": valor_renta_variable,
-            "renta_fija": valor_renta_fija,
-            "porcentaje_rv": porcentaje_rv,
-            "porcentaje_rf": porcentaje_rf,
-            "dividendos": dividendos,
-            "rendimientos": rendimientos,
-            "estado": (
-                "VALORIZADO" if ganancia >= 0 else "DESVALORIZADO"
-            )
-        }
-
+    # --------------------------------------------------
     # INICIAR APLICACIÓN
+    # --------------------------------------------------
 
     def iniciarDashboard(self):
         self.root = tk.Tk()
         self.root.title(
-            "Sistema de Seguimiento y Valoración de Portafolio"
+            "Sistema de Seguimiento y Valoración de Portafolio - Bancolombia COP"
         )
         self.root.minsize(1100, 700)
         self.root.configure(bg=self.FONDO)
@@ -177,27 +144,23 @@ class InterfazPortafolioGUI:
         except tk.TclError:
             ancho = self.root.winfo_screenwidth()
             alto = self.root.winfo_screenheight()
-            self.root.geometry(
-                f"{min(1450, ancho)}x{min(900, alto)}"
-            )
+            self.root.geometry(f"{min(1450, ancho)}x{min(900, alto)}")
 
         self.var_accion = tk.StringVar(master=self.root)
-        self.var_filtro = tk.StringVar(
-            master=self.root, value="1A"
-        )
-        self.var_estado = tk.StringVar(
-            master=self.root, value="Sistema listo"
-        )
+        self.var_filtro = tk.StringVar(master=self.root, value="1A")
+        self.var_estado = tk.StringVar(master=self.root, value="Sistema listo")
 
         self.configurarEstilos()
         self.crearEncabezado()
         self.crearIndicadores()
         self.crearContenido()
-        self.actualizarDashboard()
+        self.actualizarVistaCompleta()
 
         self.root.mainloop()
 
+    # --------------------------------------------------
     # ESTILOS
+    # --------------------------------------------------
 
     def configurarEstilos(self):
         estilo = ttk.Style(self.root)
@@ -233,13 +196,13 @@ class InterfazPortafolioGUI:
             font=("Segoe UI", 9, "bold")
         )
 
+    # --------------------------------------------------
     # ENCABEZADO
+    # --------------------------------------------------
 
     def crearEncabezado(self):
         encabezado = tk.Frame(self.root, bg=self.FONDO)
-        encabezado.pack(
-            fill="x", padx=22, pady=(18, 14)
-        )
+        encabezado.pack(fill="x", padx=22, pady=(18, 14))
 
         titulo = tk.Frame(encabezado, bg=self.FONDO)
         titulo.pack(side="left", fill="x", expand=True)
@@ -256,26 +219,41 @@ class InterfazPortafolioGUI:
             titulo,
             text=(
                 f"{self.portafolio.nombre_fondo} "
-                "· Valores expresados en COP"
+                "· Valores expresados en Pesos Colombianos (COP)"
             ),
             bg=self.FONDO,
             fg=self.TEXTO_SECUNDARIO,
             font=("Segoe UI", 10)
         ).pack(anchor="w", pady=(4, 0))
 
-        ttk.Button(
-            encabezado,
-            text="Actualizar cotizaciones",
-            command=self.actualizarMercado
-        ).pack(side="right")
+        botones_header = tk.Frame(encabezado, bg=self.FONDO)
+        botones_header.pack(side="right")
 
+        ttk.Button(
+            botones_header,
+            text="➕ Registrar Operación",
+            command=self.abrirVentanaRegistroOperacion
+        ).pack(side="left", padx=4)
+
+        ttk.Button(
+            botones_header,
+            text="📜 Historial de Operaciones",
+            command=self.abrirVentanaHistorial
+        ).pack(side="left", padx=4)
+
+        ttk.Button(
+            botones_header,
+            text="🔄 Actualizar cotizaciones",
+            command=self.actualizarMercado
+        ).pack(side="left", padx=4)
+
+    # --------------------------------------------------
     # TARJETAS DE INDICADORES
+    # --------------------------------------------------
 
     def crearIndicadores(self):
         contenedor = tk.Frame(self.root, bg=self.FONDO)
-        contenedor.pack(
-            fill="x", padx=22, pady=(0, 14)
-        )
+        contenedor.pack(fill="x", padx=22, pady=(0, 14))
 
         indicadores = [
             ("CAPITAL INVERTIDO", "capital_invertido", "cop"),
@@ -323,7 +301,9 @@ class InterfazPortafolioGUI:
             etiqueta.pack(anchor="w", pady=(8, 0))
             self.tarjetas[clave] = (etiqueta, formato)
 
+    # --------------------------------------------------
     # CONTENIDO PRINCIPAL
+    # --------------------------------------------------
 
     def crearContenido(self):
         cuerpo = tk.Frame(self.root, bg=self.FONDO)
@@ -378,7 +358,9 @@ class InterfazPortafolioGUI:
             pady=5
         )
 
+    # --------------------------------------------------
     # GRÁFICA HISTÓRICA
+    # --------------------------------------------------
 
     def crearGraficaPrecios(self, padre):
         barra = tk.Frame(padre, bg=self.PANEL)
@@ -436,6 +418,52 @@ class InterfazPortafolioGUI:
             self.eventoCambioGrafica
         )
 
+        # ---- Consulta / simulación por fecha exacta ----
+        self.var_fecha_exacta = tk.StringVar(master=self.root, value="")
+        self.var_sim = tk.StringVar(master=self.root, value="")
+
+        barra_fecha = tk.Frame(padre, bg=self.PANEL)
+        barra_fecha.pack(fill="x", pady=(0, 6))
+
+        tk.Label(
+            barra_fecha,
+            text="Fecha exacta (YYYY-MM-DD):",
+            bg=self.PANEL,
+            fg=self.TEXTO_SECUNDARIO
+        ).pack(side="left", padx=(0, 4))
+
+        self.entry_fecha = ttk.Entry(
+            barra_fecha,
+            textvariable=self.var_fecha_exacta,
+            width=12
+        )
+        self.entry_fecha.pack(side="left", padx=4)
+        self.entry_fecha.bind("<Return>", lambda e: self.consultarFechaExacta())
+
+        self.btn_consultar_fecha = ttk.Button(
+            barra_fecha,
+            text="🔎 Consultar / Simular",
+            command=self.consultarFechaExacta
+        )
+        self.btn_consultar_fecha.pack(side="left", padx=4)
+
+        ttk.Button(
+            barra_fecha,
+            text="Limpiar",
+            command=self.limpiarSimulacionFecha
+        ).pack(side="left", padx=4)
+
+        self.lbl_sim = tk.Label(
+            barra_fecha,
+            textvariable=self.var_sim,
+            bg=self.PANEL,
+            fg=self.TEXTO_SECUNDARIO,
+            font=("Segoe UI", 9, "bold"),
+            anchor="w",
+            justify="left"
+        )
+        self.lbl_sim.pack(side="left", padx=8, fill="x", expand=True)
+
         self.figura_precios = Figure(
             figsize=(8.2, 2.55),
             dpi=100,
@@ -464,6 +492,109 @@ class InterfazPortafolioGUI:
     def eventoCambioGrafica(self, evento=None):
         self.dibujarSerieHistorica()
 
+    def graficarSerieTiempo(self, ticker: str = None, filtro: str = None):
+        """Método oficial del Diagrama UML para graficar series de tiempo."""
+        if ticker:
+            self.var_accion.set(ticker)
+        if filtro:
+            self.var_filtro.set(filtro)
+        self.dibujarSerieHistorica()
+
+    def limpiarSimulacionFecha(self):
+        self.simulacion = None
+        if self.var_fecha_exacta:
+            self.var_fecha_exacta.set("")
+        if self.var_sim:
+            self.var_sim.set("")
+        if self.lbl_sim:
+            self.lbl_sim.config(fg=self.TEXTO_SECUNDARIO)
+        self.dibujarSerieHistorica()
+
+    def consultarFechaExacta(self):
+        """Consulta el precio de una fecha exacta y simula el rendimiento hasta hoy."""
+        if self.consulta_fecha_en_curso:
+            return
+
+        ticker = self.var_accion.get().strip() if self.var_accion else ""
+        texto = self.var_fecha_exacta.get().strip()
+
+        if not ticker:
+            self.var_sim.set("Seleccione una acción.")
+            self.lbl_sim.config(fg=self.ROJO)
+            return
+
+        try:
+            datetime.strptime(texto, "%Y-%m-%d")
+        except ValueError:
+            self.simulacion = None
+            self.var_sim.set("Fecha inválida. Use el formato YYYY-MM-DD (ej. 2025-08-20).")
+            self.lbl_sim.config(fg=self.ROJO)
+            self.dibujarSerieHistorica()
+            return
+
+        self.consulta_fecha_en_curso = True
+        self.btn_consultar_fecha.state(["disabled"])
+        self.var_sim.set("Consultando...")
+        self.lbl_sim.config(fg=self.TEXTO_SECUNDARIO)
+        self.var_estado.set(f"Consultando {ticker} el {texto}...")
+
+        def tarea():
+            resultado = None
+            actual = 0.0
+            error = None
+            try:
+                servicio = self.portafolio.servicio_mercado
+                resultado = servicio.obtenerPrecioFechaExacta(ticker, texto)
+                if resultado.get("ok"):
+                    cot = servicio.consultarCotizacionYEPS(ticker)
+                    actual = float(cot.get("precio_cop", 0.0) or 0.0)
+            except Exception as exc:
+                error = exc
+
+            if self.root:
+                self.root.after(0, lambda: finalizar(resultado, actual, error))
+
+        def finalizar(resultado, actual, error):
+            self.consulta_fecha_en_curso = False
+            self.btn_consultar_fecha.state(["!disabled"])
+
+            if error is not None or resultado is None:
+                self.simulacion = None
+                self.var_sim.set(f"Error en la consulta: {error}")
+                self.lbl_sim.config(fg=self.ROJO)
+                self.var_estado.set("Error en la consulta por fecha exacta.")
+            elif not resultado.get("ok"):
+                self.simulacion = None
+                self.var_sim.set(resultado.get("mensaje", "Sin cotización para esa fecha."))
+                self.lbl_sim.config(fg="#F2C14E")
+                self.var_estado.set("Fecha sin cotización bursátil.")
+            elif actual <= 0:
+                self.simulacion = None
+                self.var_sim.set("No se pudo obtener el precio actual en tiempo real.")
+                self.lbl_sim.config(fg=self.ROJO)
+                self.var_estado.set("Precio actual no disponible.")
+            else:
+                pf = float(resultado["precio_cop"])
+                rend = (actual - pf) / pf * 100.0 if pf > 0 else 0.0
+                self.simulacion = {
+                    "ticker": ticker,
+                    "fecha": resultado["fecha"],
+                    "precio_fecha": pf,
+                    "precio_actual": actual,
+                    "rendimiento": rend
+                }
+                signo = "+" if rend >= 0 else ""
+                self.var_sim.set(
+                    f"{resultado['fecha']}: {self.formatoCOP(pf)} → Hoy: {self.formatoCOP(actual)} "
+                    f"({signo}{self.formatearPorcentaje(rend)})"
+                )
+                self.lbl_sim.config(fg=self.VERDE if rend >= 0 else self.ROJO)
+                self.var_estado.set(f"Simulación {ticker} desde {resultado['fecha']} calculada.")
+
+            self.dibujarSerieHistorica()
+
+        threading.Thread(target=tarea, daemon=True).start()
+
     def dibujarSerieHistorica(self):
         if self.ax_precios is None:
             return
@@ -471,8 +602,8 @@ class InterfazPortafolioGUI:
         self.ax_precios.clear()
         self.estilizarGrafica(self.ax_precios)
 
-        ticker = self.var_accion.get().strip()
-        filtro = self.var_filtro.get()
+        ticker = self.var_accion.get().strip() if self.var_accion else ""
+        filtro = self.var_filtro.get() if self.var_filtro else "1A"
 
         if not ticker:
             self.ax_precios.text(
@@ -493,14 +624,10 @@ class InterfazPortafolioGUI:
             )
 
             if serie is None or serie.empty:
-                raise ValueError(
-                    "No hay datos históricos disponibles."
-                )
+                raise ValueError("No hay datos históricos disponibles.")
 
             if "Precio_COP" not in serie.columns:
-                raise ValueError(
-                    "No existe la columna Precio_COP."
-                )
+                raise ValueError("No existe la columna Precio_COP.")
 
             precios = pd.to_numeric(
                 serie["Precio_COP"],
@@ -508,9 +635,12 @@ class InterfazPortafolioGUI:
             ).dropna()
 
             if precios.empty:
-                raise ValueError(
-                    "No se encontraron precios válidos."
-                )
+                raise ValueError("No se encontraron precios válidos.")
+
+            # Zona horaria: se descarta tz (hora local de la bolsa) para poder
+            # combinar el índice con fechas naive de la simulación.
+            if isinstance(precios.index, pd.DatetimeIndex) and precios.index.tz is not None:
+                precios.index = precios.index.tz_localize(None)
 
             fechas = precios.index
 
@@ -528,8 +658,55 @@ class InterfazPortafolioGUI:
                 alpha=0.12
             )
 
+            titulo = f"{ticker} | {filtro}"
+
+            # ---- Simulación por fecha exacta ----
+            sim = self.simulacion
+            if (
+                sim
+                and sim.get("ticker") == ticker
+                and isinstance(precios.index, pd.DatetimeIndex)
+            ):
+                f = pd.Timestamp(sim["fecha"])
+                pf = sim["precio_fecha"]
+                pa = sim["precio_actual"]
+                rend = sim["rendimiento"]
+                x_hoy = precios.index[-1]
+                if x_hoy < f:
+                    x_hoy = pd.Timestamp.now().normalize()
+
+                color_r = self.VERDE if rend >= 0 else self.ROJO
+                signo = "+" if rend >= 0 else ""
+
+                self.ax_precios.axvline(
+                    f, color="#F2C14E", linestyle="--", linewidth=1.0, alpha=0.9
+                )
+                self.ax_precios.axhline(
+                    pa, color=self.AZUL, linestyle="--", linewidth=0.9, alpha=0.8
+                )
+                self.ax_precios.plot(
+                    [f, x_hoy], [pf, pa],
+                    color=color_r, linestyle=":", linewidth=1.8,
+                    marker="o", markersize=6
+                )
+                self.ax_precios.annotate(
+                    f"{sim['fecha']}: {self.formatoCOP(pf)}",
+                    xy=(f, pf), xytext=(6, 10), textcoords="offset points",
+                    color=self.TEXTO, fontsize=8
+                )
+                self.ax_precios.annotate(
+                    f"Hoy: {self.formatoCOP(pa)}\n"
+                    f"{signo}{self.formatearPorcentaje(rend)}",
+                    xy=(x_hoy, pa), xytext=(-6, 10), textcoords="offset points",
+                    ha="right", color=color_r, fontsize=8, fontweight="bold"
+                )
+                titulo += (
+                    f" | Simulación desde {sim['fecha']}: "
+                    f"{signo}{self.formatearPorcentaje(rend)}"
+                )
+
             self.ax_precios.set_title(
-                f"{ticker} | {filtro}",
+                titulo,
                 color=self.TEXTO,
                 fontsize=10,
                 loc="left"
@@ -543,11 +720,7 @@ class InterfazPortafolioGUI:
 
             if isinstance(precios.index, pd.DatetimeIndex):
                 localizador = AutoDateLocator()
-
-                self.ax_precios.xaxis.set_major_locator(
-                    localizador
-                )
-
+                self.ax_precios.xaxis.set_major_locator(localizador)
                 self.ax_precios.xaxis.set_major_formatter(
                     ConciseDateFormatter(localizador)
                 )
@@ -568,12 +741,14 @@ class InterfazPortafolioGUI:
 
         self.canvas_precios.draw_idle()
 
+    # --------------------------------------------------
     # TABLA DE INVERSIONES
+    # --------------------------------------------------
 
     def crearTablaActivos(self, padre):
         tk.Label(
             padre,
-            text="Detalle de inversiones",
+            text="Detalle de inversiones (Haga clic en una acción para graficar)",
             bg=self.PANEL,
             fg=self.TEXTO,
             font=("Segoe UI", 12, "bold")
@@ -687,6 +862,21 @@ class InterfazPortafolioGUI:
         marco_tabla.grid_rowconfigure(0, weight=1)
         marco_tabla.grid_columnconfigure(0, weight=1)
 
+        # Enlace interactivo para graficar al seleccionar fila
+        self.tabla_activos.bind("<<TreeviewSelect>>", self._on_fila_seleccionada)
+
+    def _on_fila_seleccionada(self, evento=None):
+        seleccion = self.tabla_activos.selection()
+        if not seleccion:
+            return
+        item = self.tabla_activos.item(seleccion[0])
+        valores = item.get("values", [])
+        if valores:
+            codigo = str(valores[0]).strip().upper()
+            activo = self.portafolio.buscarActivo(codigo)
+            if isinstance(activo, Accion):
+                self.graficarSerieTiempo(ticker=codigo)
+
     def actualizarTablaActivos(self):
         for fila in self.tabla_activos.get_children():
             self.tabla_activos.delete(fila)
@@ -699,13 +889,11 @@ class InterfazPortafolioGUI:
             if isinstance(activo, Accion):
                 tipo = "Renta variable"
                 unidades = activo.cant_actual
-
             elif isinstance(activo, InstrumentoRentaFija):
                 tipo = activo.tipo
                 unidades = "—"
-
             else:
-                tipo = activo.tipo_renta
+                tipo = getattr(activo, "tipo_renta", "—")
                 unidades = "—"
 
             self.tabla_activos.insert(
@@ -716,13 +904,15 @@ class InterfazPortafolioGUI:
                     activo.nombre,
                     tipo,
                     unidades,
-                    self.formatearCOP(capital),
-                    self.formatearCOP(valor),
+                    self.formatoCOP(capital),
+                    self.formatoCOP(valor),
                     self.formatearPorcentaje(rentabilidad)
                 )
             )
 
+    # --------------------------------------------------
     # DISTRIBUCIÓN DEL PORTAFOLIO
+    # --------------------------------------------------
 
     def crearDistribucion(self, padre):
         tk.Label(
@@ -748,16 +938,14 @@ class InterfazPortafolioGUI:
             master=padre
         )
 
-        self.canvas_distribucion.get_tk_widget().pack(
-            fill="x"
-        )
+        self.canvas_distribucion.get_tk_widget().pack(fill="x")
 
     def actualizarDistribucion(self, resumen):
         self.ax_distribucion.clear()
 
         valores = [
-            resumen["renta_variable"],
-            resumen["renta_fija"]
+            resumen.get("renta_variable", 0.0),
+            resumen.get("renta_fija", 0.0)
         ]
 
         etiquetas = [
@@ -785,10 +973,8 @@ class InterfazPortafolioGUI:
                 va="center",
                 color=self.TEXTO_SECUNDARIO
             )
-
         else:
             total = sum(d[0] for d in datos)
-
             porcentajes = [
                 f"{d[1]} · {d[0] / total:.1%}"
                 for d in datos
@@ -825,7 +1011,9 @@ class InterfazPortafolioGUI:
         self.ax_distribucion.set_facecolor(self.PANEL)
         self.canvas_distribucion.draw_idle()
 
+    # --------------------------------------------------
     # RESUMEN LATERAL
+    # --------------------------------------------------
 
     def crearResumen(self, padre):
         tk.Label(
@@ -846,7 +1034,6 @@ class InterfazPortafolioGUI:
             fg=self.TEXTO,
             font=("Segoe UI", 10, "bold")
         )
-
         self.lbl_ganancia.pack(anchor="w", pady=4)
 
         self.lbl_renta_variable = tk.Label(
@@ -856,7 +1043,6 @@ class InterfazPortafolioGUI:
             fg=self.TEXTO_SECUNDARIO,
             font=("Segoe UI", 9)
         )
-
         self.lbl_renta_variable.pack(anchor="w", pady=4)
 
         self.lbl_renta_fija = tk.Label(
@@ -866,7 +1052,6 @@ class InterfazPortafolioGUI:
             fg=self.TEXTO_SECUNDARIO,
             font=("Segoe UI", 9)
         )
-
         self.lbl_renta_fija.pack(anchor="w", pady=4)
 
         self.lbl_estado_valoracion = tk.Label(
@@ -876,11 +1061,7 @@ class InterfazPortafolioGUI:
             fg=self.VERDE,
             font=("Segoe UI", 9, "bold")
         )
-
-        self.lbl_estado_valoracion.pack(
-            anchor="w",
-            pady=(10, 4)
-        )
+        self.lbl_estado_valoracion.pack(anchor="w", pady=(10, 4))
 
         tk.Label(
             padre,
@@ -899,153 +1080,776 @@ class InterfazPortafolioGUI:
             pady=(12, 0)
         )
 
+    # --------------------------------------------------
     # ACTUALIZAR LISTA DE ACCIONES
+    # --------------------------------------------------
 
     def actualizarListaAcciones(self):
-        codigos = [
-            activo.codigo
-            for activo in self.portafolio.activos
-            if isinstance(activo, Accion)
-        ]
+        codigos = self.portafolio.listarCodigosDisponibles("Renta Variable")
 
-        seleccion = self.var_accion.get()
+        if not self.combo_acciones:
+            return
+
+        seleccion = self.var_accion.get() if self.var_accion else ""
         self.combo_acciones["values"] = codigos
 
         if seleccion in codigos:
             self.var_accion.set(seleccion)
         else:
-            self.var_accion.set(
-                codigos[0] if codigos else ""
-            )
+            self.var_accion.set(codigos[0] if codigos else "")
 
+    # --------------------------------------------------
     # ACTUALIZAR TODO EL DASHBOARD
+    # --------------------------------------------------
 
     def actualizarDashboard(self):
+        """Actualiza todas las vistas numéricas, gráficas y tablas del dashboard."""
         resumen = self.obtenerResumen()
 
         for clave, (etiqueta, formato) in self.tarjetas.items():
-            valor = resumen[clave]
-
+            valor = resumen.get(clave, 0.0)
             if formato == "cop":
-                texto = self.formatearCOP(valor)
+                texto = self.formatoCOP(valor)
             else:
                 texto = self.formatearPorcentaje(valor)
-
             etiqueta.config(text=texto)
 
         color = (
             self.VERDE
-            if resumen["ganancia"] >= 0
+            if resumen.get("ganancia", 0.0) >= 0
             else self.ROJO
         )
 
-        self.tarjetas["rentabilidad"][0].config(fg=color)
-        self.tarjetas["rentabilidad_ea"][0].config(fg=color)
+        if "rentabilidad" in self.tarjetas:
+            self.tarjetas["rentabilidad"][0].config(fg=color)
+        if "rentabilidad_ea" in self.tarjetas:
+            self.tarjetas["rentabilidad_ea"][0].config(fg=color)
 
-        self.lbl_ganancia.config(
-            text=(
-                "Ganancia / pérdida: "
-                + self.formatearCOP(resumen["ganancia"])
-            ),
-            fg=color
-        )
-
-        self.lbl_renta_variable.config(
-            text=(
-                "Renta variable: "
-                + self.formatearCOP(resumen["renta_variable"])
-                + " ("
-                + self.formatearPorcentaje(resumen["porcentaje_rv"])
-                + ")"
+        if self.lbl_ganancia:
+            self.lbl_ganancia.config(
+                text=(
+                    "Ganancia / pérdida: "
+                    + self.formatoCOP(resumen.get("ganancia", 0.0))
+                ),
+                fg=color
             )
-        )
 
-        self.lbl_renta_fija.config(
-            text=(
-                "Renta fija: "
-                + self.formatearCOP(resumen["renta_fija"])
-                + " ("
-                + self.formatearPorcentaje(resumen["porcentaje_rf"])
-                + ")"
+        if self.lbl_renta_variable:
+            self.lbl_renta_variable.config(
+                text=(
+                    "Renta variable: "
+                    + self.formatoCOP(resumen.get("renta_variable", 0.0))
+                    + " ("
+                    + self.formatearPorcentaje(resumen.get("porcentaje_rv", 0.0))
+                    + ")"
+                )
             )
-        )
 
-        self.lbl_estado_valoracion.config(
-            text=resumen["estado"]
-        )
+        if self.lbl_renta_fija:
+            self.lbl_renta_fija.config(
+                text=(
+                    "Renta fija: "
+                    + self.formatoCOP(resumen.get("renta_fija", 0.0))
+                    + " ("
+                    + self.formatearPorcentaje(resumen.get("porcentaje_rf", 0.0))
+                    + ")"
+                )
+            )
 
-        self.actualizarTablaActivos()
-        self.actualizarDistribucion(resumen)
-        self.actualizarListaAcciones()
-        self.dibujarSerieHistorica()
+        if self.lbl_estado_valoracion:
+            self.lbl_estado_valoracion.config(
+                text=resumen.get("estado", "")
+            )
 
+        if self.tabla_activos:
+            self.actualizarTablaActivos()
+        if self.ax_distribucion:
+            self.actualizarDistribucion(resumen)
+        if self.combo_acciones:
+            self.actualizarListaAcciones()
+        if self.ax_precios:
+            self.dibujarSerieHistorica()
+
+    def actualizarVistaCompleta(self):
+        """Método oficial según el Diagrama de Clases UML."""
+        self.actualizarDashboard()
+
+    # --------------------------------------------------
     # ESTILO DE GRÁFICAS
+    # --------------------------------------------------
 
     def estilizarGrafica(self, eje):
         eje.set_facecolor(self.PANEL)
-
         eje.tick_params(
             colors=self.TEXTO_SECUNDARIO,
             labelsize=8
         )
-
         eje.grid(
             True,
             color="#344955",
             alpha=0.55,
             linewidth=0.6
         )
-
         for borde in eje.spines.values():
             borde.set_color("#344955")
 
-    # ACTUALIZAR PRECIOS DE MERCADO
+    # --------------------------------------------------
+    # ACTUALIZAR PRECIOS DE MERCADO EN HILO SEPARADO
+    # --------------------------------------------------
 
     def actualizarMercado(self):
         if self.actualizacion_en_curso:
             return
 
         self.actualizacion_en_curso = True
-
-        self.var_estado.set(
-            "Actualizando cotizaciones de mercado..."
-        )
+        self.var_estado.set("Actualizando cotizaciones de mercado en tiempo real...")
 
         def tarea():
             error = None
-
             try:
                 self.portafolio.actualizarValoracionMercado()
             except Exception as exc:
                 error = exc
 
-            self.root.after(
-                0,
-                lambda: finalizar(error)
-            )
+            if self.root:
+                self.root.after(0, lambda: finalizar(error))
 
         def finalizar(error):
             self.actualizacion_en_curso = False
-
             if error is not None:
-                self.var_estado.set(
-                    "Error al actualizar cotizaciones."
-                )
-
-                messagebox.showerror(
-                    "Error de mercado",
-                    str(error),
-                    parent=self.root
-                )
-
+                self.var_estado.set("Error al actualizar cotizaciones de mercado.")
+                if self.root:
+                    messagebox.showerror(
+                        "Error de mercado",
+                        str(error),
+                        parent=self.root
+                    )
             else:
-                self.var_estado.set(
-                    "Cotizaciones actualizadas correctamente."
-                )
-
-                self.actualizarDashboard()
+                self.var_estado.set("Cotizaciones actualizadas correctamente.")
+                self.actualizarVistaCompleta()
 
         threading.Thread(
             target=tarea,
             daemon=True
         ).start()
+
+    # --------------------------------------------------
+    # VENTANA MODAL: REGISTRAR OPERACIONES (COMPRA/VENTA/RENDIMIENTOS)
+    # --------------------------------------------------
+
+    def abrirVentanaRegistroOperacion(self):
+        """Abre un diálogo modal interactivo para simular y registrar compras, ventas, cupones y dividendos."""
+        from datetime import date, timedelta
+
+        ventana = tk.Toplevel(self.root)
+        ventana.title("Registrar Operación de Inversión")
+        ventana.configure(bg=self.FONDO)
+        ventana.geometry("560x760")
+        ventana.minsize(520, 700)
+        ventana.transient(self.root)
+        ventana.grab_set()
+
+        padre = tk.Frame(ventana, bg=self.FONDO, padx=22, pady=16)
+        padre.pack(fill="both", expand=True)
+
+        tk.Label(
+            padre,
+            text="REGISTRAR NUEVA OPERACIÓN",
+            bg=self.FONDO,
+            fg=self.TEXTO,
+            font=("Segoe UI", 15, "bold")
+        ).pack(anchor="w", pady=(0, 2))
+
+        tk.Label(
+            padre,
+            text="Simulación contable de compra, venta, dividendos y rendimientos",
+            bg=self.FONDO,
+            fg=self.TEXTO_SECUNDARIO,
+            font=("Segoe UI", 9)
+        ).pack(anchor="w", pady=(0, 12))
+
+        form = tk.Frame(padre, bg=self.PANEL, padx=16, pady=14)
+        form.pack(fill="both", expand=True)
+        form.grid_columnconfigure(1, weight=1)
+
+        # 1. Categoría
+        tk.Label(form, text="Categoría:", bg=self.PANEL, fg=self.TEXTO, font=("Segoe UI", 9, "bold")).grid(row=0, column=0, sticky="w", pady=4)
+        var_cat = tk.StringVar(value="Renta Variable")
+        combo_cat = ttk.Combobox(form, textvariable=var_cat, values=("Renta Variable", "Renta Fija"), state="readonly", width=25)
+        combo_cat.grid(row=0, column=1, sticky="ew", pady=4, padx=(8, 0))
+
+        # 2. Tipo de Operación
+        tk.Label(form, text="Operación:", bg=self.PANEL, fg=self.TEXTO, font=("Segoe UI", 9, "bold")).grid(row=1, column=0, sticky="w", pady=4)
+        var_op = tk.StringVar(value="COMPRA")
+        combo_op = ttk.Combobox(form, textvariable=var_op, state="readonly", width=25)
+        combo_op.grid(row=1, column=1, sticky="ew", pady=4, padx=(8, 0))
+
+        # 3. Código / Ticker
+        tk.Label(form, text="Código / Ticker:", bg=self.PANEL, fg=self.TEXTO, font=("Segoe UI", 9, "bold")).grid(row=2, column=0, sticky="w", pady=4)
+        var_cod = tk.StringVar()
+        combo_cod = ttk.Combobox(form, textvariable=var_cod, width=25)
+        combo_cod.grid(row=2, column=1, sticky="ew", pady=4, padx=(8, 0))
+
+        # 4. Nombre Comercial
+        tk.Label(form, text="Nombre del Activo:", bg=self.PANEL, fg=self.TEXTO, font=("Segoe UI", 9, "bold")).grid(row=3, column=0, sticky="w", pady=4)
+        var_nom = tk.StringVar()
+        entry_nom = ttk.Entry(form, textvariable=var_nom, width=27)
+        entry_nom.grid(row=3, column=1, sticky="ew", pady=4, padx=(8, 0))
+
+        # 5. Fecha de Operación
+        tk.Label(form, text="Fecha (YYYY-MM-DD):", bg=self.PANEL, fg=self.TEXTO, font=("Segoe UI", 9, "bold")).grid(row=4, column=0, sticky="w", pady=4)
+        var_fecha = tk.StringVar(value=date.today().isoformat())
+        entry_fecha = ttk.Entry(form, textvariable=var_fecha, width=27)
+        entry_fecha.grid(row=4, column=1, sticky="ew", pady=4, padx=(8, 0))
+
+        # 6. Cantidad
+        lbl_cant = tk.Label(form, text="Cantidad de Acciones:", bg=self.PANEL, fg=self.TEXTO, font=("Segoe UI", 9, "bold"))
+        lbl_cant.grid(row=5, column=0, sticky="w", pady=4)
+        var_cant = tk.StringVar(value="10")
+        entry_cant = ttk.Entry(form, textvariable=var_cant, width=27)
+        entry_cant.grid(row=5, column=1, sticky="ew", pady=4, padx=(8, 0))
+
+        # 7. Precio Unitario o Monto COP
+        lbl_precio = tk.Label(form, text="Precio Unitario COP:", bg=self.PANEL, fg=self.TEXTO, font=("Segoe UI", 9, "bold"))
+        lbl_precio.grid(row=6, column=0, sticky="w", pady=4)
+        var_precio = tk.StringVar(value="35000")
+        entry_precio = ttk.Entry(form, textvariable=var_precio, width=27)
+        entry_precio.grid(row=6, column=1, sticky="ew", pady=4, padx=(8, 0))
+
+        # 7b. Moneda del precio (igual que el Excel: Valor US * TRM = Valor COP)
+        tk.Label(form, text="Moneda del precio:", bg=self.PANEL, fg=self.TEXTO, font=("Segoe UI", 9, "bold")).grid(row=7, column=0, sticky="nw", pady=4)
+        marco_moneda = tk.Frame(form, bg=self.PANEL)
+        marco_moneda.grid(row=7, column=1, sticky="ew", pady=4, padx=(8, 0))
+        marco_moneda.grid_columnconfigure(1, weight=1)
+        var_moneda = tk.StringVar(value="COP")
+        combo_moneda = ttk.Combobox(marco_moneda, textvariable=var_moneda, values=("COP", "USD"), state="readonly", width=6)
+        combo_moneda.grid(row=0, column=0, sticky="w")
+        var_preview = tk.StringVar(value="")
+        tk.Label(
+            marco_moneda, textvariable=var_preview, bg=self.PANEL, fg=self.TEXTO_SECUNDARIO,
+            font=("Segoe UI", 8), anchor="w", justify="left", wraplength=300
+        ).grid(row=0, column=1, sticky="w", padx=(8, 0))
+
+        # 8. Comisión del Bróker: automática 0,2 % (Excel: (Valor COP*Compra + Valor COP*Venta) * 0,002)
+        COMISION_PCT = self.portafolio.COMISION_ESTANDAR
+
+        # 8b. TRM histórica exacta
+        tk.Label(form, text="TRM (COP/USD):", bg=self.PANEL, fg=self.TEXTO, font=("Segoe UI", 9, "bold")).grid(row=8, column=0, sticky="nw", pady=4)
+        marco_trm = tk.Frame(form, bg=self.PANEL)
+        marco_trm.grid(row=8, column=1, sticky="ew", pady=4, padx=(8, 0))
+        marco_trm.grid_columnconfigure(0, weight=1)
+        var_trm = tk.StringVar(value="1.0")
+        entry_trm = ttk.Entry(marco_trm, textvariable=var_trm, width=18)
+        entry_trm.grid(row=0, column=0, sticky="ew")
+        btn_trm = ttk.Button(marco_trm, text="Traer TRM", width=11, command=lambda: traer_trm())
+        btn_trm.grid(row=0, column=1, padx=(6, 0))
+        var_trm_estado = tk.StringVar(value="")
+        tk.Label(
+            marco_trm, textvariable=var_trm_estado, bg=self.PANEL, fg=self.TEXTO_SECUNDARIO,
+            font=("Segoe UI", 8), anchor="w", justify="left", wraplength=340
+        ).grid(row=1, column=0, columnspan=2, sticky="w", pady=(2, 0))
+
+        # Marco especial para campos de Renta Fija
+        frame_rf = tk.LabelFrame(form, text="Condiciones Contractuales (Renta Fija)", bg=self.PANEL, fg=self.AZUL, font=("Segoe UI", 8, "bold"), padx=8, pady=6)
+        frame_rf.grid(row=9, column=0, columnspan=2, sticky="nsew", pady=(8, 4))
+        frame_rf.grid_columnconfigure(1, weight=1)
+
+        tk.Label(frame_rf, text="Subtipo:", bg=self.PANEL, fg=self.TEXTO, font=("Segoe UI", 8)).grid(row=0, column=0, sticky="w", pady=2)
+        var_subtipo = tk.StringVar(value="CDT")
+        combo_subtipo = ttk.Combobox(frame_rf, textvariable=var_subtipo, values=("CDT", "BONO", "TES"), state="readonly", width=23)
+        combo_subtipo.grid(row=0, column=1, sticky="ew", pady=2, padx=(8, 0))
+
+        tk.Label(frame_rf, text="Tasa E.A. (%):", bg=self.PANEL, fg=self.TEXTO, font=("Segoe UI", 8)).grid(row=1, column=0, sticky="w", pady=2)
+        var_tasa = tk.StringVar(value="10.5")
+        entry_tasa = ttk.Entry(frame_rf, textvariable=var_tasa, width=25)
+        entry_tasa.grid(row=1, column=1, sticky="ew", pady=2, padx=(8, 0))
+
+        tk.Label(frame_rf, text="Vencimiento:", bg=self.PANEL, fg=self.TEXTO, font=("Segoe UI", 8)).grid(row=2, column=0, sticky="w", pady=2)
+        default_venc = (date.today() + timedelta(days=360)).isoformat()
+        var_venc = tk.StringVar(value=default_venc)
+        entry_venc = ttk.Entry(frame_rf, textvariable=var_venc, width=25)
+        entry_venc.grid(row=2, column=1, sticky="ew", pady=2, padx=(8, 0))
+
+        tk.Label(frame_rf, text="Frecuencia Cupón:", bg=self.PANEL, fg=self.TEXTO, font=("Segoe UI", 8)).grid(row=3, column=0, sticky="w", pady=2)
+        var_frec = tk.StringVar(value="Semestral (2)")
+        combo_frec = ttk.Combobox(frame_rf, textvariable=var_frec, values=("Semestral (2)", "Anual (1)", "Trimestral (4)", "Mensual (12)"), state="readonly", width=23)
+        combo_frec.grid(row=3, column=1, sticky="ew", pady=2, padx=(8, 0))
+
+        def actualizar_campos_dinamicos(*args):
+            cat = var_cat.get()
+            if cat == "Renta Variable":
+                combo_op["values"] = ("COMPRA", "VENTA", "DIVIDENDO")
+                if var_op.get() not in ("COMPRA", "VENTA", "DIVIDENDO"):
+                    var_op.set("COMPRA")
+                if var_cod.get().strip().upper().endswith(".CL"):
+                    var_moneda.set("COP")
+                    combo_moneda.config(state="disabled")
+                else:
+                    combo_moneda.config(state="readonly")
+                if var_op.get() == "DIVIDENDO":
+                    # % de dividendo x TRM: el valor digitado siempre se multiplica por la TRM
+                    if not var_cod.get().strip().upper().endswith(".CL"):
+                        var_moneda.set("USD")
+                        combo_moneda.config(state="disabled")
+                    lbl_cant.config(text="Acciones en cartera:")
+                    entry_cant.config(state="disabled")
+                    lbl_precio.config(text="% de Dividendo (x TRM):")
+                    var_precio.set("0")
+                else:
+                    lbl_cant.config(text="Cantidad de Acciones:")
+                    entry_cant.config(state="normal")
+                    lbl_precio.config(text=f"Precio Unitario ({var_moneda.get()}):")
+                frame_rf.grid_remove()
+            else:
+                ops_rf = ("COMPRA / APERTURA", "VENTA / LIQUIDACION", "RENDIMIENTO / CUPON", "ABONO A CAPITAL")
+                combo_op["values"] = ops_rf
+                if var_op.get() not in ops_rf:
+                    var_op.set("COMPRA / APERTURA")
+                var_moneda.set("COP")
+                combo_moneda.config(state="disabled")
+                entry_cant.config(state="normal")
+                lbl_cant.config(text="Cantidad de Títulos:")
+                lbl_precio.config(text="Capital / Valor COP:")
+                if var_op.get() == "COMPRA / APERTURA":
+                    frame_rf.grid()
+                else:
+                    frame_rf.grid_remove()
+
+            codigos = list(self.portafolio.listarCodigosDisponibles(cat))
+            combo_cod["values"] = codigos
+            if var_cod.get().strip().upper() not in codigos:
+                var_cod.set("")
+                var_nom.set("")
+
+        combo_cat.bind("<<ComboboxSelected>>", actualizar_campos_dinamicos)
+        combo_op.bind("<<ComboboxSelected>>", actualizar_campos_dinamicos)
+
+        def al_seleccionar_codigo(evento=None):
+            cod = var_cod.get().strip().upper()
+            activo = self.portafolio.buscarActivo(cod)
+            if activo:
+                var_nom.set(activo.nombre)
+                if isinstance(activo, Accion) and var_op.get() != "DIVIDENDO":
+                    var_precio.set(str(activo.precio_mercado_cop or activo.costo_promedio_cop))
+                elif isinstance(activo, InstrumentoRentaFija):
+                    var_subtipo.set(activo.tipo)
+                    var_tasa.set(str(round(activo.tasa_ea * 100, 2)))
+                    var_venc.set(activo.fecha_vencimiento)
+            else:
+                info = self.portafolio.obtenerInfoCatalogo(cod)
+                if info:
+                    var_nom.set(info["nombre"])
+                    if info.get("subtipo"):
+                        var_subtipo.set(info["subtipo"])
+                        var_tasa.set(str(round(info["tasa_ea"] * 100, 2)))
+
+        combo_cod.bind("<<ComboboxSelected>>", al_seleccionar_codigo)
+        combo_cod.bind("<Return>", al_seleccionar_codigo)
+
+        def leer_numero(var):
+            return float(var.get().strip().replace(",", ".") or 0)
+
+        def precio_en_cop():
+            """Valor COP = Valor US * TRM si el precio está en USD; si no, el precio digitado."""
+            precio_v = leer_numero(var_precio)
+            if var_moneda.get() == "USD":
+                return precio_v * leer_numero(var_trm)
+            return precio_v
+
+        def calcular_comision():
+            """
+            Comisión automática del 0,2 % igual al Excel:
+            (Valor COP * Compra + Valor COP * Venta) * 0,002.
+            Dividendos, rendimientos y abonos de capital no pagan comisión.
+            """
+            try:
+                op = var_op.get()
+                if op in ("DIVIDENDO", "RENDIMIENTO / CUPON", "ABONO A CAPITAL"):
+                    return 0.0
+                if var_cat.get() == "Renta Variable":
+                    return leer_numero(var_cant) * precio_en_cop() * COMISION_PCT
+                return precio_en_cop() * COMISION_PCT
+            except ValueError:
+                return 0.0
+
+        en_preview = [False]   # Evita recursión: el preview escribe en var_cant (que tiene trace)
+
+        def actualizar_preview(*args):
+            """Muestra en vivo el Valor COP, la comisión o el pago del dividendo."""
+            if en_preview[0]:
+                return
+            en_preview[0] = True
+            try:
+                cod = var_cod.get().strip().upper()
+                if var_cat.get() == "Renta Variable" and var_op.get() == "DIVIDENDO":
+                    acciones = self.portafolio.accionesEnCartera(cod, var_fecha.get().strip()) if cod else 0.0
+                    entry_cant.config(state="normal")
+                    var_cant.set(str(int(acciones)) if float(acciones).is_integer() else str(acciones))
+                    entry_cant.config(state="disabled")
+                    div_cop = precio_en_cop()
+                    var_preview.set(f"Dividendo COP: {self.formatoCOP(div_cop)}  |  "
+                                    f"Pago: {self.formatoCOP(div_cop * acciones)}")
+                else:
+                    cant_v = leer_numero(var_cant) if var_cat.get() == "Renta Variable" else 1.0
+                    var_preview.set(f"Valor COP: {self.formatoCOP(precio_en_cop())}  |  "
+                                    f"Bruto: {self.formatoCOP(cant_v * precio_en_cop())}  |  "
+                                    f"Comisión 0,2%: {self.formatoCOP(calcular_comision())}")
+            except (ValueError, tk.TclError):
+                var_preview.set("")
+            finally:
+                en_preview[0] = False
+
+        for _v in (var_precio, var_cant, var_trm, var_moneda, var_op, var_fecha, var_cod):
+            _v.trace_add("write", actualizar_preview)
+        combo_moneda.bind("<<ComboboxSelected>>", actualizar_campos_dinamicos)
+        combo_cod.bind("<<ComboboxSelected>>", actualizar_campos_dinamicos, add="+")
+
+        actualizar_campos_dinamicos()
+        actualizar_preview()
+
+        trm_req = [0]   # Identificador de la última consulta: ignora respuestas atrasadas
+
+        def traer_trm(evento=None):
+            cod = var_cod.get().strip().upper()
+            fecha_txt = var_fecha.get().strip()
+            trm_req[0] += 1
+            req = trm_req[0]
+
+            if var_cat.get() != "Renta Variable" or cod.endswith(".CL"):
+                var_trm.set("1.0")
+                var_trm_estado.set("Activo en COP: TRM = 1.0")
+                return
+            try:
+                datetime.strptime(fecha_txt, "%Y-%m-%d")
+            except ValueError:
+                var_trm_estado.set("Fecha inválida: use el formato YYYY-MM-DD.")
+                return
+
+            var_trm_estado.set("Consultando TRM histórica...")
+
+            def tarea():
+                try:
+                    valor, origen, usada = self.portafolio.servicio_mercado.obtenerTRMFechaExactaDetalle(fecha_txt)
+                except Exception:
+                    valor, origen, usada = None, "ERROR", ""
+
+                def finalizar():
+                    if req != trm_req[0]:
+                        return
+                    try:
+                        if valor is None:
+                            var_trm_estado.set("No se pudo consultar la TRM. Ingrésela manualmente.")
+                            return
+                        var_trm.set(f"{valor:.2f}")
+                        if origen == "EXACTA":
+                            var_trm_estado.set(f"TRM del {fecha_txt} (cierre exacto).")
+                        elif origen == "ANTERIOR":
+                            var_trm_estado.set(f"{fecha_txt} sin cotización: se usó el cierre del {usada}.")
+                        else:
+                            var_trm_estado.set("Sin datos o sin conexión: se usó la TRM actual.")
+                    except tk.TclError:
+                        pass
+
+                try:
+                    self.root.after(0, finalizar)
+                except Exception:
+                    pass
+
+            threading.Thread(target=tarea, daemon=True).start()
+
+        entry_fecha.bind("<FocusOut>", traer_trm)
+        entry_fecha.bind("<Return>", traer_trm)
+        combo_cod.bind("<<ComboboxSelected>>", traer_trm, add="+")
+        combo_cod.bind("<FocusOut>", lambda e: (al_seleccionar_codigo(), traer_trm()), add="+")
+        combo_cat.bind("<<ComboboxSelected>>", traer_trm, add="+")
+
+        # Botones de acción
+        barra_botones = tk.Frame(padre, bg=self.FONDO)
+        barra_botones.pack(side="bottom", fill="x", pady=(14, 0), before=form)
+
+        def confirmar_operacion():
+            try:
+                cat = var_cat.get()
+                op = var_op.get()
+                codigo = var_cod.get().strip().upper()
+                nombre = var_nom.get().strip()
+                fecha = var_fecha.get().strip()
+
+                if not codigo:
+                    raise ValueError("Debe ingresar o seleccionar un Código / Ticker.")
+                if not nombre:
+                    nombre = codigo
+
+                es_dividendo = (cat == "Renta Variable" and op == "DIVIDENDO")
+                if es_dividendo:
+                    cantidad = 1.0      # Las acciones se toman de la cartera a la fecha
+                else:
+                    try:
+                        cantidad = float(var_cant.get().replace(",", "."))
+                        if cantidad <= 0:
+                            raise ValueError()
+                    except ValueError:
+                        raise ValueError("La cantidad debe ser un número positivo.")
+
+                try:
+                    precio = float(var_precio.get().replace(",", "."))
+                    if precio <= 0:
+                        raise ValueError()
+                except ValueError:
+                    raise ValueError("El precio, dividendo o monto debe ser positivo.")
+
+                try:
+                    trm_val = float(var_trm.get().replace(",", "."))
+                    if trm_val <= 0:
+                        trm_val = None
+                except ValueError:
+                    trm_val = None   # El portafolio la consulta automáticamente
+
+                en_usd = (cat == "Renta Variable" and var_moneda.get() == "USD"
+                          and not codigo.endswith(".CL"))
+                if en_usd and (trm_val is None or trm_val <= 1.0):
+                    raise ValueError("Para precios en USD ingrese o traiga una TRM válida (mayor a 1).")
+
+                # Comisión 0,2 % igual que el Excel (en acciones la calcula el portafolio: None)
+                comision = None if cat == "Renta Variable" else calcular_comision()
+
+                # Ejecutar según la categoría y operación
+                if cat == "Renta Variable":
+                    precio_kw = {"precio_usd": precio} if en_usd else {"precio_cop": precio}
+                    if op == "COMPRA":
+                        self.portafolio.registrarCompraAccion(
+                            codigo=codigo, nombre=nombre, fecha=fecha,
+                            cantidad=int(cantidad), comision_cop=comision,
+                            trm=trm_val, **precio_kw
+                        )
+                    elif op == "VENTA":
+                        self.portafolio.registrarVentaAccion(
+                            codigo=codigo, fecha=fecha,
+                            cantidad=int(cantidad), comision_cop=comision,
+                            trm=trm_val, **precio_kw
+                        )
+                    elif op == "DIVIDENDO":
+                        self.portafolio.registrarDividendoAccion(
+                            codigo=codigo, fecha=fecha, dividendo_unitario=precio,
+                            moneda="USD" if en_usd else "COP",
+                            comision_cop=0.0, trm=trm_val
+                        )
+
+                else: # Renta Fija
+                    if op == "COMPRA / APERTURA":
+                        subtipo = var_subtipo.get()
+                        tasa_ea = float(var_tasa.get().replace(",", ".")) / 100.0
+                        vencimiento = var_venc.get().strip()
+                        mapa_frec = {"Anual (1)": 1, "Semestral (2)": 2, "Trimestral (4)": 4, "Mensual (12)": 12}
+                        frec = mapa_frec.get(var_frec.get(), 2)
+
+                        self.portafolio.registrarAperturaRentaFija(
+                            codigo=codigo, nombre=nombre, subtipo=subtipo,
+                            fecha_apertura=fecha, capital_cop=precio, tasa_ea=tasa_ea,
+                            fecha_vencimiento=vencimiento, comision_cop=comision,
+                            frecuencia_cupon=frec
+                        )
+                    elif op == "VENTA / LIQUIDACION":
+                        self.portafolio.registrarVentaRentaFija(
+                            codigo=codigo, fecha=fecha, valor_venta_cop=precio, comision_cop=comision
+                        )
+                    elif op == "RENDIMIENTO / CUPON":
+                        self.portafolio.registrarRendimientoRentaFija(
+                            codigo=codigo, fecha=fecha, monto_cop=precio, comision_cop=comision
+                        )
+                    elif op == "ABONO A CAPITAL":
+                        self.portafolio.registrarAbonoCapitalRentaFija(
+                            codigo=codigo, fecha=fecha, monto_cop=precio, comision_cop=comision
+                        )
+
+                # Guardar cambios y refrescar el dashboard en tiempo real
+                self.portafolio.guardarPortafolio()
+                self.actualizarVistaCompleta()
+
+                messagebox.showinfo(
+                    "Operación Exitosa",
+                    f"Se registró exitosamente la operación de {op} para el activo {codigo}.\n"
+                    f"El portafolio y los cálculos de rentabilidad han sido actualizados.",
+                    parent=ventana
+                )
+                ventana.destroy()
+
+            except Exception as exc:
+                messagebox.showerror("Error en la Operación", str(exc), parent=ventana)
+
+        ttk.Button(
+            barra_botones,
+            text="Confirmar Operación",
+            command=confirmar_operacion
+        ).pack(side="right", padx=(6, 0))
+
+        ttk.Button(
+            barra_botones,
+            text="Cancelar",
+            command=ventana.destroy
+        ).pack(side="right")
+
+    # --------------------------------------------------
+    # VENTANA MODAL: HISTORIAL DE TRANSACCIONES
+    # --------------------------------------------------
+    def abrirVentanaHistorial(self):
+        """
+        Historial de operaciones con el formato y las fórmulas del Excel 'Prueba portafolio.xlsx':
+        Fecha | Acciones | Valor US | Valor COP | Compra | Venta | TRM | Dividendo |
+        Dividendo cop | Pago | Comision | Saldo | Variacion | Total  (+ Activo/Operación en vista TODOS).
+        """
+        ventana = tk.Toplevel(self.root)
+        ventana.title("Historial de Operaciones del Portafolio")
+        ventana.configure(bg=self.FONDO)
+        ventana.geometry("1500x560")
+        ventana.minsize(1000, 400)
+        ventana.transient(self.root)
+
+        padre = tk.Frame(ventana, bg=self.FONDO, padx=20, pady=16)
+        padre.pack(fill="both", expand=True)
+
+        tk.Label(
+            padre, text="HISTORIAL DE OPERACIONES",
+            bg=self.FONDO, fg=self.TEXTO, font=("Segoe UI", 15, "bold")
+        ).pack(anchor="w", pady=(0, 2))
+
+        tk.Label(
+            padre,
+            text=("Saldo = Saldo anterior − Valor COP×Compra + Valor COP×Venta + Dividendo COP×Acciones − Comisión  "
+                  "|  Comisión = 0,2 % × Valor COP × (Compra + Venta)  |  Valor COP = Valor US × TRM"),
+            bg=self.FONDO, fg=self.TEXTO_SECUNDARIO, font=("Segoe UI", 9)
+        ).pack(anchor="w", pady=(0, 10))
+
+        # --- Filtro por activo ---
+        barra_filtro = tk.Frame(padre, bg=self.FONDO)
+        barra_filtro.pack(fill="x", pady=(0, 10))
+
+        tk.Label(
+            barra_filtro, text="Filtrar por activo:",
+            bg=self.FONDO, fg=self.TEXTO, font=("Segoe UI", 9, "bold")
+        ).pack(side="left", padx=(0, 8))
+
+        codigos = ["TODOS"]
+        for cod in [a.codigo for a in self.portafolio.activos] + \
+                   [t.codigo_activo for t in self.portafolio.transacciones]:
+            if cod not in codigos:
+                codigos.append(cod)
+
+        var_filtro = tk.StringVar(value=codigos[1] if len(codigos) == 2 else "TODOS")
+        combo_filtro = ttk.Combobox(
+            barra_filtro, textvariable=var_filtro, values=codigos,
+            state="readonly", width=22
+        )
+        combo_filtro.pack(side="left")
+
+        # --- Tabla ---
+        marco_tabla = tk.Frame(padre, bg=self.PANEL)
+        marco_tabla.pack(fill="both", expand=True)
+
+        columnas = ("fecha", "activo", "operacion", "acciones", "valor_us", "valor_cop",
+                    "compra", "venta", "trm", "dividendo_us", "dividendo_cop", "pago",
+                    "comision", "saldo", "variacion", "total")
+        columnas_excel = tuple(c for c in columnas if c not in ("activo", "operacion"))
+        tabla = ttk.Treeview(marco_tabla, columns=columnas, show="headings")
+
+        encabezados = {
+            "fecha": "Fecha", "activo": "Activo", "operacion": "Operación",
+            "acciones": "Acciones", "valor_us": "Valor US",
+            "valor_cop": "Valor COP", "compra": "Compra", "venta": "Venta", "trm": "TRM",
+            "dividendo_us": "% Dividendo", "dividendo_cop": "Dividendo cop", "pago": "Pago",
+            "comision": "Comision", "saldo": "Saldo", "variacion": "Variacion", "total": "Total"
+        }
+        anchos = {
+            "fecha": 88, "activo": 100, "operacion": 90, "acciones": 70,
+            "valor_us": 80, "valor_cop": 95, "compra": 62, "venta": 58, "trm": 80,
+            "dividendo_us": 75, "dividendo_cop": 95, "pago": 90, "comision": 80,
+            "saldo": 115, "variacion": 100, "total": 115
+        }
+        for c in columnas:
+            tabla.heading(c, text=encabezados[c])
+            tabla.column(c, width=anchos[c], minwidth=50, stretch=True,
+                         anchor="w" if c in ("fecha", "activo", "operacion") else "e")
+
+        tabla.tag_configure("saldo_pos", foreground=self.VERDE)
+        tabla.tag_configure("saldo_neg", foreground=self.ROJO)
+
+        scroll_y = ttk.Scrollbar(marco_tabla, orient="vertical", command=tabla.yview)
+        scroll_x = ttk.Scrollbar(marco_tabla, orient="horizontal", command=tabla.xview)
+        tabla.configure(yscrollcommand=scroll_y.set, xscrollcommand=scroll_x.set)
+
+        tabla.grid(row=0, column=0, sticky="nsew")
+        scroll_y.grid(row=0, column=1, sticky="ns")
+        scroll_x.grid(row=1, column=0, sticky="ew")
+        marco_tabla.grid_rowconfigure(0, weight=1)
+        marco_tabla.grid_columnconfigure(0, weight=1)
+
+        # --- Pie de resumen ---
+        pie = tk.Frame(padre, bg=self.FONDO)
+        pie.pack(fill="x", pady=(10, 0))
+
+        var_pie = tk.StringVar()
+        tk.Label(
+            pie, textvariable=var_pie, bg=self.FONDO, fg=self.TEXTO_SECUNDARIO,
+            font=("Segoe UI", 9, "bold"), wraplength=1300, justify="left"
+        ).pack(side="left")
+        ttk.Button(pie, text="Cerrar", command=ventana.destroy).pack(side="right")
+
+        def dec(valor, decimales=2):
+            return (f"{float(valor):,.{decimales}f}"
+                    .replace(",", "X").replace(".", ",").replace("X", "."))
+
+        def usd(valor):
+            return "$" + dec(valor, 2)
+
+        def cantidad_txt(valor):
+            if isinstance(valor, str):
+                return valor
+            return str(int(valor)) if float(valor).is_integer() else dec(valor)
+
+        def cargar_tabla(evento=None):
+            filtro = var_filtro.get()
+            tabla.delete(*tabla.get_children())
+            # En vista por activo se muestran exactamente las columnas del Excel
+            tabla.configure(displaycolumns=columnas if filtro == "TODOS" else columnas_excel)
+            filas = self.portafolio.obtenerLibroTransaccionesDetallado(filtro)
+
+            total_comisiones = total_pagos = 0.0
+            for f in filas:
+                total_comisiones += f["comision"]
+                total_pagos += f["pago"]
+                es_usd = f["moneda"] == "USD"
+                tabla.insert("", "end", tags=("saldo_neg" if f["saldo"] < 0 else "saldo_pos",), values=(
+                    f["fecha"],
+                    f["activo"],
+                    f["operacion"],
+                    cantidad_txt(f["acciones"]),
+                    usd(f["valor_us"]) if es_usd else "—",
+                    self.formatoCOP(f["valor_cop"]),
+                    cantidad_txt(f["compra"]),
+                    cantidad_txt(f["venta"]),
+                    "$" + dec(f["trm"]),
+                    dec(f["dividendo_us"]) if es_usd else "—",
+                    "$" + dec(f["dividendo_cop"]),
+                    self.formatoCOP(f["pago"]),
+                    self.formatoCOP(f["comision"]),
+                    self.formatoCOP(f["saldo"]),
+                    self.formatoCOP(f["variacion"]),
+                    self.formatoCOP(f["total"])
+                ))
+
+            saldo_final = filas[-1]["saldo"] if filas else self.portafolio.capital_inicial_cop
+            texto = (
+                f"Activo: {filtro}  |  Movimientos: {len(filas)}  |  "
+                f"Capital inicial: {self.formatoCOP(self.portafolio.capital_inicial_cop)}  |  "
+                f"Comisiones: {self.formatoCOP(total_comisiones)}  |  "
+                f"Pagos recibidos: {self.formatoCOP(total_pagos)}  |  "
+                f"Saldo final: {self.formatoCOP(saldo_final)}"
+            )
+            if filtro != "TODOS" and filas and not isinstance(filas[-1]["acciones_despues"], str):
+                texto += f"  |  Acciones vigentes: {cantidad_txt(filas[-1]['acciones_despues'])}"
+            if filas:
+                texto += f"  |  Total: {self.formatoCOP(filas[-1]['total'])}"
+            var_pie.set(texto)
+
+        combo_filtro.bind("<<ComboboxSelected>>", cargar_tabla)
+        cargar_tabla()

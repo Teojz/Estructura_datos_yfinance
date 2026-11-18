@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod  # Libreria de Python para definir clases abstractas
-from datetime import datetime        # Libreria para calcular dias transcurridos desde la compra
+from datetime import datetime, date  # Libreria para calcular dias transcurridos desde la compra
 
 
 class Activo(ABC):
@@ -18,8 +18,15 @@ class Activo(ABC):
     def calcularDiasTenencia(self) -> int:
         """Calcula cuantos dias lleva abierta la inversion desde la fecha de apertura hasta hoy."""
         try:
-            fecha_ini = datetime.strptime(self.fecha_apertura, "%Y-%m-%d") # Convierte texto a fecha
-            dias = (datetime.now() - fecha_ini).days                       # Resta hoy menos fecha inicial
+            if isinstance(self.fecha_apertura, str):
+                fecha_ini = datetime.strptime(self.fecha_apertura.strip(), "%Y-%m-%d").date()
+            elif isinstance(self.fecha_apertura, datetime):
+                fecha_ini = self.fecha_apertura.date()
+            elif isinstance(self.fecha_apertura, date):
+                fecha_ini = self.fecha_apertura
+            else:
+                fecha_ini = datetime.now().date()
+            dias = (datetime.now().date() - fecha_ini).days
             return max(dias, 1)                                            # Minimo 1 dia para evitar division por 0
         except Exception:
             return 365                                                     # Por defecto 365 dias si falla el formato

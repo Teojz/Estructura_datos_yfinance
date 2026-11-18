@@ -28,11 +28,31 @@ El sistema administra la contabilidad de un conjunto de inversiones registrando 
 - `src/activo.py`: Clase abstracta `Activo` con los atributos e interfaz base de valoración.
 - `src/transaccion.py`: Clase `Transaccion` para el registro de operaciones de compra/venta y comisiones del bróker.
 - `src/accion.py`: Clase `Accion` para renta variable, control de acciones compradas/vendidas, dividendos y EPS.
-- `src/renta_fija.py`: Clase `InstrumentoRentaFija` para CDT, Bonos y TES.
-- `src/servicio_mercado.py`: Clase `ServicioMercado` conectada a `yfinance` para precios en COP, EPS y series de tiempo.
-- `src/portafolio.py`: Clase controladora `Portafolio` para cálculo de rentabilidades (Acumulada y E.A.) y persistencia.
+- `src/renta_fija.py`: Clase `InstrumentoRentaFija` para CDT, Bonos y TES (conforme al UML y con compatibilidad total).
+- `src/servicio_mercado.py`: Clase `ServicioMercado` conectada a `yfinance` para precios en COP, EPS y series de tiempo con respaldo offline.
+- `src/portafolio.py`: Clase controladora `Portafolio` para cálculo de rentabilidades (Acumulada y E.A.) y persistencia JSON.
 - `src/interfaz_portafolio.py`: Clase `InterfazPortafolioGUI` con dashboard visual (`Tkinter` + `Matplotlib`).
 - `main.py`: Archivo principal desde donde se cargan los demás módulos e inicia la aplicación.
+
+## Ejecución en Windows
+
+Para abrir y utilizar el sistema en un sistema operativo Windows, dispone de tres opciones directas:
+
+1. **Lanzador Rápido (Doble Clic):**
+   - Ejecute el archivo `Iniciar_Portafolio.bat` situado en la raíz del proyecto.
+2. **Ejecutable Compilado (.exe):**
+   - Ejecute directamente `dist/PortafolioInversiones/PortafolioInversiones.exe`. No requiere consola de comandos.
+3. **Desde Consola Python:**
+   ```powershell
+   python main.py
+   ```
+
+### Pruebas Automatizadas
+Para verificar el funcionamiento de todas las clases y fórmulas:
+- Ejecute el archivo `Ejecutar_Pruebas.bat` o desde consola:
+  ```powershell
+  python probar_sistema_completo.py
+  ```
 
 ## Distribución de Actividades, Ramas y Commits
 - **[Teojz] (Rama `feature/mercado-y-portafolio`):** Implementación de `ServicioMercado` (`src/servicio_mercado.py`) con `yfinance`, conversión a COP, EPS y series de tiempo; motor financiero `Portafolio` (`src/portafolio.py`) para cálculo de Rentabilidad Acumulada y Efectiva Anual (E.A.), archivo principal `main.py` y arquitectura UML.
