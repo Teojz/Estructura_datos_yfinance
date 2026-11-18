@@ -5,5 +5,3 @@ venv/
 .vscode/
 .idea/
 build/
-.bat
-.exe
